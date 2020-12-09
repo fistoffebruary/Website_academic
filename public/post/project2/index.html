@@ -1,0 +1,1635 @@
+<!DOCTYPE html><html lang="en-us" >
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="generator" content="Source Themes Academic 4.8.0">
+
+  
+
+  
+  
+
+  
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="Ryan Bailey">
+
+  
+  
+  
+    
+  
+  <meta name="description" content="REB3566  Welcome to for loop h*ll  0a. Introduction This analysis is based on The Cancer Genome Atlas’ Pancreatic Adenocarcinoma Project (TCGA-PAAD). TCGA provides large, well-documented cancer datasets that are semi open-source.">
+
+  
+  <link rel="alternate" hreflang="en-us" href="/post/project2/">
+
+  
+
+
+  
+  
+  
+  <meta name="theme-color" content="#3f51b5">
+  
+
+  
+  
+
+  
+  
+  
+  
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css" integrity="sha256-FMvZuGapsJLjouA6k7Eo2lusoAX9i0ShlWFG6qt7SLc=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/styles/github.min.css" crossorigin="anonymous" title="hl-light">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" disabled>
+        
+      
+    
+
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.5.1/leaflet.css" integrity="sha256-SHMGCYmST46SoyGgo4YR/9AlK1vf3ff84Aq9yK4hdqM=" crossorigin="anonymous">
+    
+
+    
+
+    
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.1.2/lazysizes.min.js" integrity="sha256-Md1qLToewPeKjfAHU1zyPwOutccPAm5tahnaw7Osw0A=" crossorigin="anonymous" async></script>
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+
+  
+
+  
+  
+  
+    
+      
+      
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:400,700%7CRoboto:400,400italic,700%7CRoboto+Mono&display=swap">
+    
+  
+
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/academic.css">
+
+  
+
+
+
+
+  
+
+
+  
+  
+
+  
+
+  <link rel="manifest" href="/index.webmanifest">
+  <link rel="icon" type="image/png" href="/images/icon_hu0b7a4cb9992c9ac0e91bd28ffd38dd00_9727_32x32_fill_lanczos_center_2.png">
+  <link rel="apple-touch-icon" type="image/png" href="/images/icon_hu0b7a4cb9992c9ac0e91bd28ffd38dd00_9727_192x192_fill_lanczos_center_2.png">
+
+  <link rel="canonical" href="/post/project2/">
+
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  <meta property="twitter:card" content="summary_large_image">
+  
+  <meta property="og:site_name" content="Ryan Bailey">
+  <meta property="og:url" content="/post/project2/">
+  <meta property="og:title" content="Fitting Models on High Dimensional Biological Data (in R) | Ryan Bailey">
+  <meta property="og:description" content="REB3566  Welcome to for loop h*ll  0a. Introduction This analysis is based on The Cancer Genome Atlas’ Pancreatic Adenocarcinoma Project (TCGA-PAAD). TCGA provides large, well-documented cancer datasets that are semi open-source."><meta property="og:image" content="/post/project2/featured.jpg">
+  <meta property="twitter:image" content="/post/project2/featured.jpg"><meta property="og:locale" content="en-us">
+  
+    
+    
+  
+
+  
+
+
+    
+
+
+
+
+
+
+  
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/post/project2/"
+  },
+  "headline": "Fitting Models on High Dimensional Biological Data (in R)",
+  
+  "image": [
+    "/post/project2/featured.jpg"
+  ],
+  
+  "datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  
+  "author": {
+    "@type": "Person",
+    "name": "Ryan Bailey"
+  },
+  
+  "publisher": {
+    "@type": "Organization",
+    "name": "Ryan Bailey",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/images/icon_hu0b7a4cb9992c9ac0e91bd28ffd38dd00_9727_192x192_fill_lanczos_center_2.png"
+    }
+  },
+  "description": "REB3566  Welcome to for loop h*ll  0a. Introduction This analysis is based on The Cancer Genome Atlas’ Pancreatic Adenocarcinoma Project (TCGA-PAAD). TCGA provides large, well-documented cancer datasets that are semi open-source."
+}
+</script>
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+
+  <title>Fitting Models on High Dimensional Biological Data (in R) | Ryan Bailey</title>
+
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class=" ">
+
+  <aside class="search-results" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>Search</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="Search..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control">
+        
+      </div>
+
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+  <div class="container">
+
+    
+    <div class="d-none d-lg-inline-flex">
+      <a class="navbar-brand" href="/">Ryan Bailey</a>
+    </div>
+    
+
+    
+    <button type="button" class="navbar-toggler" data-toggle="collapse"
+            data-target="#navbar-content" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+    <span><i class="fas fa-bars"></i></span>
+    </button>
+    
+
+    
+    <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
+      <a class="navbar-brand" href="/">Ryan Bailey</a>
+    </div>
+    
+
+    
+    
+    <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+      
+      <ul class="navbar-nav d-md-inline-flex">
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#about"><span>Bio</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#posts"><span>Posts</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#skills"><span>Skills</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#projects"><span>Projects</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#books"><span>Books</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#contact"><span>Contact</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/files/cv.pdf"><span>CV</span></a>
+        </li>
+
+        
+        
+
+      
+
+        
+      </ul>
+    </div>
+
+    <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+      
+      <li class="nav-item">
+        <a class="nav-link js-search" href="#" aria-label="Search"><i class="fas fa-search" aria-hidden="true"></i></a>
+      </li>
+      
+
+      
+      <li class="nav-item dropdown theme-dropdown">
+        <a href="#" class="nav-link js-theme-selector" data-toggle="dropdown" aria-haspopup="true">
+          <i class="fas fa-palette" aria-hidden="true"></i>
+        </a>
+        <div class="dropdown-menu">
+          <a href="#" class="dropdown-item js-set-theme-light">
+            <span>Light</span>
+          </a>
+          <a href="#" class="dropdown-item js-set-theme-dark">
+            <span>Dark</span>
+          </a>
+          <a href="#" class="dropdown-item js-set-theme-auto">
+            <span>Automatic</span>
+          </a>
+        </div>
+      </li>
+      
+
+      
+
+    </ul>
+
+  </div>
+</nav>
+
+
+
+  <article class="article">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+<div class="article-container pt-3">
+  <h1>Fitting Models on High Dimensional Biological Data (in R)</h1>
+
+  
+
+  
+
+
+<div class="article-metadata">
+
+  
+  
+
+  
+  <span class="article-date">
+    
+    
+      
+    
+    Jan 1, 0001
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+    16 min read
+  </span>
+  
+
+  
+  
+  
+
+  
+  
+
+</div>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+
+
+<div class="article-header container-fluid featured-image-wrapper mt-4 mb-4" style="max-width: 5616px; max-height: 3744px;">
+  <div style="position: relative">
+    <img src="/post/project2/featured.jpg" alt="" class="featured-image">
+    <span class="article-header-caption">Photo by Pietro Jeng on Unsplash</span>
+  </div>
+</div>
+
+
+
+  <div class="article-container">
+
+    <div class="article-style">
+      
+
+
+<div id="reb3566" class="section level2">
+<h2>REB3566</h2>
+</div>
+<div id="welcome-to-for-loop-hll" class="section level2">
+<h2>Welcome to for loop h*ll</h2>
+</div>
+<div id="a.-introduction" class="section level1">
+<h1>0a. Introduction</h1>
+<p>This analysis is based on The Cancer Genome Atlas’ Pancreatic Adenocarcinoma Project (TCGA-PAAD). TCGA provides large, well-documented cancer datasets that are semi open-source. Three datasets, HT-Seq FPKM, survival data, and phenotype data, were acquired from UCSC Xena, a data download portal from UC Santa Cruz <a href="https://xenabrowser.net/datapages/?cohort=GDC%20TCGA%20Pancreatic%20Cancer%20(PAAD)&amp;removeHub=https%3A%2F%2Fxena.treehouse.gi.ucsc.edu%3A443">UCSC Xena</a>. There are 182 complete cases for these datasets. The HT-Seq dataset has 60,483 variables, all of which are numeric. These are measured in <em>log2(fpkm+1) or log2(Fragments Per Kilobase of transcript per Million mapped reads + 1)</em>. In RNA-Seq, the relative expression of a transcript is proportional to the number of cDNA fragments that originate from it. The survival data contains two variables, days_survived (OS.time) and OS (Overall Survival), where <strong>1</strong> is a survival event (death), and <strong>0</strong> is no survival event. The phenotype data contains 122 variables encompassing treatment information, tumor grading/staging, patient health behaviors, and demographic information.</p>
+<p>One of the key categorical variables that I come back to frequently is <strong>organ of origin.</strong> When I binarize this variable, I encode <strong>Head of Pancreas</strong> as <strong>1</strong> and all other locations as <strong>0.</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2575681/">For context, pancreatic cancers that originate in the head of the pancreas often have better prognoses than those that arise in other areas.</a></p>
+<p><em>Note: I plan on doing inline comments on my code, but will also narrate my results, interpretations, and thought processes after each code chunk.</em></p>
+</div>
+<div id="b.-importing-libraries" class="section level1">
+<h1>0b. Importing Libraries</h1>
+<p>##```{{r Importing Packages,echo=T,warning=F, message=F,results=‘hide’}</p>
+</div>
+<div id="for-reading-in-my-datasets" class="section level1">
+<h1>for reading in my datasets</h1>
+<p>library(readr)</p>
+</div>
+<div id="for-data-wrangling-cleaning-etc." class="section level1">
+<h1>for data wrangling, cleaning, etc.</h1>
+<p>library(tidyverse)</p>
+<p>#plotting
+library(ggplot2)</p>
+</div>
+<div id="heteroscedasticity-consistent-covariance-matrix-estimation" class="section level1">
+<h1>Heteroscedasticity-Consistent Covariance Matrix Estimation</h1>
+<p>library(sandwich)</p>
+</div>
+<div id="test-for-heteroskedasticity" class="section level1">
+<h1>test for heteroskedasticity</h1>
+<p>library(lmtest)</p>
+</div>
+<div id="roc-plots" class="section level1">
+<h1>ROC plots</h1>
+<p>library(plotROC)</p>
+<p>#LASSO
+library(glmnet)</p>
+</div>
+<div id="things-to-build-a-hierarchically-clustered-heatmap" class="section level1">
+<h1>Things to build a hierarchically clustered heatmap</h1>
+<p>library(prettyR); library(reshape2);library(ComplexHeatmap);library(circlize)</p>
+</div>
+<div id="for-pca-biplot" class="section level1">
+<h1>for PCA Biplot</h1>
+<p>library(factoextra)</p>
+</div>
+<div id="for-plotting-interactions" class="section level1">
+<h1>for plotting interactions</h1>
+<p>library(interactions)</p>
+</div>
+<div id="manova-assumptions" class="section level1">
+<h1>manova assumptions</h1>
+<p>library(rstatix)
+##```{</p>
+</div>
+<div id="c.-read-in-phenotype-data" class="section level1">
+<h1>0c. Read in Phenotype Data</h1>
+<p>##```{{r Read in Pheno,echo=T,warning=F, message=F,results=‘hide’}
+# pheno comes in a tab-separated values format
+pheno &lt;- read_delim(“TCGA-PAAD.GDC_phenotype.tsv”,
+&quot;, escape_double = FALSE, trim_ws = TRUE)</p>
+</div>
+<div id="figure-out-how-many-distinct-values-each-column-has" class="section level1">
+<h1>figure out how many distinct values each column has</h1>
+<p>x &lt;- (pheno %&gt;% summarize_all(n_distinct) %&gt;% as.vector %&gt;% as.numeric)</p>
+</div>
+<div id="figure-out-how-many-nas-are-in-each-column" class="section level1">
+<h1>figure out how many NAs are in each column</h1>
+<p>y &lt;- (pheno %&gt;% summarize_all(funs(sum(is.na(.)))) %&gt;% as.vector %&gt;% as.numeric)</p>
+</div>
+<div id="create-a-dataframe-with-column-indices-the-number-of-unique-values-and-the-number-of-nas-extract-columns-with-greater-than-1-and-fewer-than-7-unique-values-and-fewer-than-10-nas-pull-indices" class="section level1">
+<h1>create a dataframe with column indices, the number of unique values, and the number of NAs; extract columns with greater than 1 and fewer than 7 unique values and fewer than 10 NAs; pull indices</h1>
+<p>w &lt;- data.frame(w = 1:ncol(pheno),x = x, y = y) %&gt;% filter(x &lt; 7, x &gt; 1,y &lt;10) %&gt;% pull(w)</p>
+</div>
+<div id="select-only-these-variables-and-overwrite-pheno" class="section level1">
+<h1>select only these variables and overwrite pheno</h1>
+<p>pheno &lt;- pheno %&gt;% select(submitter_id.samples,w)
+##```{</p>
+<p>The first thing I need to do is filter out the not-useful variables in this vast dataset. As per the rubric specifications, categorical variables should have no more than seven unique values and, obviously, they need to have more than one unique value. Variables with a ton of NAs aren’t useful either and will wreck my dataset if I drop NAs. I select only categorical variables with less than 10 NAs and between 2 and 7 (inclusive) unique values.</p>
+</div>
+<div id="d.-read-in-survival-data" class="section level1">
+<h1>0d. Read in Survival Data</h1>
+<p>##```{{r Read in Survival,echo=T,warning=F, message=F,results=‘hide’}
+surv &lt;- read_delim(“TCGA-PAAD.survival.tsv”,
+&quot;, escape_double = FALSE, trim_ws = TRUE)</p>
+<p>##```{</p>
+<p>The survival data has one numeric and one factor. It doesn’t need any cleaning, so I only need to import it.</p>
+</div>
+<div id="e.-read-in-expression-data" class="section level1">
+<h1>0e. Read in Expression Data</h1>
+<p>##```{{r Read in Expr,echo=T,warning=F, message=F,results=‘hide’}
+# import the same as every other dataset
+expr &lt;- read_delim(“TCGA-PAAD.htseq_fpkm.tsv”,
+&quot;, escape_double = FALSE, trim_ws = TRUE)</p>
+</div>
+<div id="transpose-the-dataset-if-there-is-a-cleaner-way-to-do-this-to-data.frame-objects-id-love-to-hear-it" class="section level1">
+<h1>transpose the dataset; if there is a cleaner way to do this to data.frame objects, I’d love to hear it</h1>
+<p>expr &lt;- expr %&gt;% column_to_rownames(‘Ensembl_ID’) %&gt;% as.matrix %&gt;% t %&gt;% data.frame</p>
+</div>
+<div id="get-the-variance-for-each-gene-in-the-dataset" class="section level1">
+<h1>get the variance for each gene in the dataset</h1>
+<p>col_vars &lt;- sapply(expr, var)</p>
+</div>
+<div id="extract-only-genes-with-variance-in-the-99.9th-percentile" class="section level1">
+<h1>extract only genes with variance in the 99.9th percentile</h1>
+</div>
+<div id="this-leaves-us-with-60483-100-61-most-variable-genes-drop-genes-with-nas" class="section level1">
+<h1>this leaves us with 60483/ 100 = 61 most variable genes; drop genes with NAs</h1>
+<p>thresh &lt;- col_vars %&gt;% quantile(.999)
+expr &lt;- expr[col_vars &gt; thresh] %&gt;% na.omit()
+##```{</p>
+<p>Processing the expression data is a little more involved. Luckily the data is not entirely raw. It has been normalized to the FPKM scale and transformed with a log2(FPKM+1) transformation. Still, I’d rather not work with 60,483 variables. Here, my code organizes the genes by their variance(
+<span class="math inline">\(\sigma^{2} = \frac{\sum\limits_{i=1}^{n} \left(x_{i} - \bar{x}\right)^{2}} {n-1}\)</span>) and extracts the top 99.9th percentile genes. These genes will vary quite a bit between samples and thus have a greater likelihood of being informative.</p>
+</div>
+<div id="f.-make-a-clustered-heatmap-of-the-data.-just-for-fun" class="section level1">
+<h1>0f. Make a clustered, heatmap of the data. (Just for fun)</h1>
+<p>##```{{r Clustered Heatmap,echo=T,warning=F, message=F}
+# color code the values in the heatmap (green = -2, black = 0, red = 2)
+col_fun = colorRamp2(c(-2, 0, 2), c(“green”, “black”, “red”))</p>
+</div>
+<div id="heatmaps-get-pretty-crazy-if-you-dont-scale-the-data" class="section level1">
+<h1>heatmaps get pretty crazy if you don’t scale the data</h1>
+</div>
+<div id="extract-only-the-numeric-variables-transpose-dataset-so-genes-run-horizontally-and-samples-run-vertically" class="section level1">
+<h1>extract only the numeric variables, transpose dataset so genes run horizontally and samples run vertically</h1>
+<p>Heatmap(expr %&gt;% select_if(is.numeric) %&gt;%scale %&gt;% as.matrix %&gt;% t,
+name = “Correlation Matrix of Numeric Variables”, #title of legend
+column_title = &quot;“, row_title =”&quot;,
+row_names_gp = gpar(fontsize = 1),
+column_names_gp = gpar(fontsize = 1),
+col = col_fun) # Text size for row names
+##```{</p>
+<p>This heatmap is outside the scope of the project, but I always find it useful in understanding my data (especially when I’m working with microarray-type datasets).</p>
+</div>
+<div id="g.-join-all-the-datasets-together" class="section level1">
+<h1>0g. Join all the datasets together</h1>
+<p>##<code>{{r Join Datasets,message=FALSE} # just a bunch of left joins #dummy encode tissue_or_organ_of_origin.diagnoses such that Head of Pancreas equals 1 and other sites equal 0 data &lt;- expr %&gt;% rownames_to_column(&quot;sample&quot;) %&gt;%     left_join(pheno, by = c('sample' = &quot;submitter_id.samples&quot;)) %&gt;%     left_join(surv) %&gt;%     mutate(Head_of_pancreas = as.factor(ifelse(tissue_or_organ_of_origin.diagnoses == &quot;Head of pancreas&quot;,1,0))) ##</code>{</p>
+<p>Joining all the datasets into a single dataframe; dummy encode tissue_or_organ_of_origin.diagnoses such that Head of Pancreas equals 1 and other sites equal 0</p>
+</div>
+<div id="h.-pca" class="section level1">
+<h1>0h. PCA</h1>
+<p>##```{{r PCA, message=FALSE}
+set.seed(1)</p>
+<p>data_pca &lt;-data %&gt;% select(contains(“ENSG”)) %&gt;% scale %&gt;% princomp
+data_pca_df&lt;- data.frame(PC1=data_pca<span class="math inline">\(scores[, 1], PC2=data_pca\)</span>scores[, 2], PC3 = data_pca<span class="math inline">\(scores[, 3], HoP = as.factor(data\)</span>Head_of_pancreas))</p>
+<p>ggplot(data_pca_df,aes(PC1,PC2, color = HoP)) +
+geom_point() +
+theme_minimal() +
+geom_point(data = data_pca_df %&gt;% group_by(HoP) %&gt;% summarize(x = mean(PC2),y = mean(PC2)),aes(x,y), size = 6,shape = 3) +
+ggtitle(“PCA of Data Colored By Head of Pancreas”)
+##```{</p>
+<p>It became instantly obvious to me that MANOVA and all of the hypothesis tests for its assumptions break down with high dimensional data. I’m not sure why this is. Rather than hand picking or randomly picking a subset of variables, I perform PCA on the data and work with principal components instead.</p>
+</div>
+<div id="a.-assessing-manova-assumptions" class="section level1">
+<h1>1a. Assessing MANOVA Assumptions</h1>
+<p>##```{{r 1a MANOVA Assumptions,message=FALSE}
+group &lt;- as.character(data_pca_df$HoP)
+DVs &lt;- data_pca_df %&gt;% select(PC1,PC2,PC3)</p>
+<p>#Test multivariate normality for each group (null: assumption met)
+sapply(split(DVs,group), mshapiro_test)</p>
+<p>#If any p&lt;.05, stop (assumption violated). If not, test homogeneity of covariance matrices</p>
+<p>#Box’s M test (null: assumption met)</p>
+</div>
+<div id="box_mdvs-group" class="section level1">
+<h1>box_m(DVs, group)</h1>
+<p>##```{</p>
+<p>Welp, it appears I violate some of the assumptions of the MANOVA, but that’s no surprise. The samples are not likely to be fully random. PCA1, PC2, and PC3 are neither univariately normal nor multivariately normal. There is not a strong linear relationship between PC1, PC2, PC3 There are several groups of outliers for the variables.</p>
+<p>Box’s test was not performed because the data did not meet the multivariate normality assumption.</p>
+</div>
+<div id="b.-manova-head-of-pancreas-and-principal-components" class="section level1">
+<h1>1b. MANOVA: Head of Pancreas and Principal Components</h1>
+<p>##```{{r 1b MANOVA,warning=FALSE,message=FALSE}</p>
+<p>man &lt;- manova(cbind(PC1,PC2,PC3)~HoP,data = data_pca_df)
+summary(man,tol=0)
+summary.aov(man)</p>
+<p>pairwise.t.test((data_pca_df<span class="math inline">\(PC1), data_pca_df\)</span>HoP, p.adj = “none”)
+pairwise.t.test((data_pca_df<span class="math inline">\(PC2), data_pca_df\)</span>HoP, p.adj = “none”)
+pairwise.t.test((data_pca_df<span class="math inline">\(PC3), data_pca_df\)</span>HoP, p.adj = “none”)</p>
+<p>bonf_p &lt;- 0.05 / 7
+bonf_p
+prob_typeI &lt;- 1 - (0.95 ^ 7)
+prob_typeI
+##```{</p>
+<p>Significant differences were found between head of pancreas samples and non-head of pancreas samples. After performing 7 hypothesis tests, the probablility of a Type I error was 0.3016627. The bonferroni-corrected p-value is 0.007142857. While all hypothesis tests returned p-values less than 0.05. Only the MANOVA, PC1 ANOVA, and the PC1 pairwise t-test returned p-values less than the bonf_p. This means that only head of pancreas and non-head of pancreas only significantly different for principal component 1.</p>
+</div>
+<div id="a.-randomization-tests-mean-difference-in-pc-values-in-hop-1-vs-hop-0" class="section level1">
+<h1>2a. Randomization Tests: Mean Difference in PC Values in HoP = 1 vs HoP = 0</h1>
+<p>##```{{r 2. Randomization Test,message=FALSE}
+# set the seed
+set.seed(1)</p>
+</div>
+<div id="randomization_test-takes-a-data.frame-a-column-name-string-and-an-optional-iters-argument" class="section level1">
+<h1>randomization_test takes a data.frame, a column name (“string”), and an optional iters argument</h1>
+</div>
+<div id="it-returns-a-histogram-of-bootstrapped-mean-distances." class="section level1">
+<h1>it returns a histogram of bootstrapped mean distances.</h1>
+<p>randomization_test &lt;- function(data, column, iters = 5000){
+rand_dist &lt;- c()
+new &lt;- data %&gt;% select(column,HoP)
+for (i in 1:iters){
+temp &lt;- new[sample(1:nrow(new),size = 10, replace = T),] %&gt;%
+group_by(HoP) %&gt;%
+summarize_if(is.numeric,mean)
+if (nrow(temp) == 1){rand_dist[i] &lt;- temp%&gt;% pull(column)}
+if (nrow(temp) == 2){rand_dist[i] &lt;- temp %&gt;% summarize_if(is.numeric,diff) %&gt;% pull(column)}}
+# get the lower and upper bounds of all the mean_dists for that gene
+lb &lt;- quantile(rand_dist,0.025)
+ub &lt;- quantile(rand_dist,0.975)</p>
+<pre><code>data.frame(means=rand_dist) %&gt;%
+          ggplot(aes(x = means)) +
+          geom_histogram(alpha = 0.75,fill = &quot;gray&quot;) +
+          theme_minimal() +
+          geom_vline(xintercept = mean(rand_dist),color = &quot;red&quot;)+
+          geom_vline(xintercept = lb,color = &quot;green&quot;)+
+          geom_vline(xintercept = ub,color = &quot;green&quot;)+
+          ggtitle(paste(i,&quot;Bootstrapped Mean Differences Between HoP = 1 vs HoP = 0 for&quot;,column))+
+          xlab(&quot;Differences in Means&quot;)</code></pre>
+<p>}</p>
+<p>##```{</p>
+<p>##<code>{{r Run Randomization Tests, echo = FALSE,message=FALSE} randomization_test(data_pca_df,&quot;PC1&quot;,2500) randomization_test(data_pca_df,&quot;PC2&quot;,2500) randomization_test(data_pca_df,&quot;PC3&quot;,2500) ##</code>{</p>
+<p>The null hypothesis for each of the three hypothesis tests is that the HoP = 1 group and HoP = 0 group do not differ in their means.</p>
+<p>The alternative hypothesis for each of the three hypothesis tests is that the HoP = 1 group and HoP = 0 group do differ in their means.</p>
+<p>For context, the red line in each histogram is the mean, and the green lines are the 95 CI. It’s pretty clear to me that in each of the three plots, the 95 CI encompasses 0.</p>
+<p>The mean distributions between Head of pancreas (HoP = 1) and non-Head of pancreas (HoP = 0) samples was not significantly different for PC1, PC2, or PC3. This is because for each variable, the 95 CIs of mean differences encompass 0. I cannot reject the null hypothesis for any of these variables.</p>
+</div>
+<div id="a.-lm-predicting-survival-time-from-principal-components" class="section level1">
+<h1>3a. LM: Predicting Survival Time from Principal Components</h1>
+<p>##``<code>{{r LM PCs,message=FALSE} # create mean centered principal component variables; rename OS.time to</code>y`
+data_pca_df &lt;- data_pca_df %&gt;% mutate(PC1_c = PC1 - mean(PC1),PC2_c = PC2 - mean(PC2)) %&gt;% mutate(y = data$OS.time)</p>
+<p>fit &lt;- lm(y~PC1_c*PC2_c,data = data_pca_df)</p>
+</div>
+<div id="check-normality" class="section level1">
+<h1>check normality</h1>
+<p>qqnorm(fit<span class="math inline">\(residuals, main = &quot;QQ-plot of Model Residuals&quot;) qqline(fit\)</span>residuals, col = “red”)</p>
+</div>
+<div id="check-for-uniform-variance-check-linearity" class="section level1">
+<h1>check for uniform variance; check linearity</h1>
+<p>res &lt;- data.frame(fitted.values =fit<span class="math inline">\(fitted.values, residuals = fit\)</span>residuals)
+res %&gt;% ggplot(aes(fitted.values, residuals))+
+geom_smooth(color = ‘black’,se=T) +
+geom_point() +
+geom_hline(aes(yintercept =0),color = ‘red’) +
+theme_minimal() +
+ggtitle(“Plotting Residuals by Fitted Values”)</p>
+</div>
+<div id="hypothesis-test-for-uniform-variance" class="section level1">
+<h1>hypothesis test for uniform variance</h1>
+<p>bptest(fit)</p>
+</div>
+<div id="model-summary" class="section level1">
+<h1>model summary</h1>
+<p>summary(fit)
+# robust SEs model summary
+coeftest(fit, vcov = vcovHC(fit))
+# interaction plot for PC1_c, PC2_c
+interact_plot(fit, pred = PC1_c, modx = PC2_c,data = data_pca_df)</p>
+<p>##```{</p>
+<p><strong>OS.time =564.67 - 6.185(PC1_c) - 31.236(PC2_c) + 4.184(PC1_c * PC2_c)</strong></p>
+<p>It’s clear from the QQ plot that my data is not normal at all. That said, the BP Test and even distribution of residuals around 0 prove show that the data is homoskedastic and exhibits a linear trend.</p>
+<p>For samples of average PC1 and PC2, the predicted overall survival time is 564.67 days. PC1_c has a coefficient of -6.185. This means that for every one-unit increase in PC1_c, OS.time decreases by 6.185, on average. (not significant) PC2_c has a coefficient of -31.236. This means that for every one-unit increase in PC2_c, OS.time decreases by 31.236, on average. (significant) The coefficent for PC1_c:PC2_c is 4.184. This shows that as PC2_c increases, the effect of PC1_c on OS.time becomes more positive. (not significant)</p>
+<p>This model has an adjusted R-squared of 0.06313; this means that my model explains 6.313% of the variation in OS.time</p>
+<p>The Robust SE LM returned no significant coefficients save for the intercept. This means that because Robust SEs were used, PC2_c is no longer a significant predictor of Head of Pancreas.</p>
+</div>
+<div id="a.-bootstrapped-se-lm" class="section level1">
+<h1>4a. Bootstrapped SE LM</h1>
+<p>##```{{r Bootstrapped SE LM,message=FALSE}
+set.seed(1)</p>
+<p>samp_distn&lt;-replicate(5000, {
+boot_dat &lt;- sample_frac(data_pca_df, replace=T)</p>
+<p>fit &lt;- lm(y~PC1_c*PC2_c,data = boot_dat)
+coef(fit)})</p>
+<p>samp_distn %&gt;% t %&gt;% as.data.frame %&gt;% summarize_all(sd)</p>
+<p>samp_distn%&gt;%t%&gt;%as.data.frame%&gt;%pivot_longer(everything())%&gt;%group_by(name)%&gt;% summarize(lower=quantile(value,.025), upper=quantile(value,.975))</p>
+<p>##```{</p>
+<p>The intercept’s 95 CI does not cross 0 and is significant. All other 95 CIs include 0 and indicate that the other variables are not significant predictors. This yielded the same results as the Robust SEs LM.</p>
+</div>
+<div id="a.-define-class_diag-and-conf_matrix-functions-with-optional-decision-threshold-parameters" class="section level1">
+<h1>5a. Define class_diag and conf_matrix functions with optional decision threshold parameters</h1>
+<p>##```{{r Define Classification Functions,message=FALSE}
+class_diag&lt;-function(probs,truth,thresh= 0.5){
+tab&lt;-table(factor(probs&gt;thresh,levels=c(“FALSE”,“TRUE”)),truth)
+acc=sum(diag(tab))/sum(tab)
+sens=tab[2,2]/colSums(tab)[2]
+spec=tab[1,1]/colSums(tab)[1]
+ppv=tab[2,2]/rowSums(tab)[2]
+f1=2<em>(sens</em>ppv)/(sens+ppv)</p>
+<p>if(is.numeric(truth)==FALSE &amp; is.logical(truth)==FALSE){
+truth&lt;-as.numeric(truth)-1}</p>
+<p>#CALCULATE EXACT AUC
+ord&lt;-order(probs, decreasing=TRUE)
+probs &lt;- probs[ord]; truth &lt;- truth[ord]</p>
+<p>TPR=cumsum(truth)/max(1,sum(truth))
+FPR=cumsum(!truth)/max(1,sum(!truth))</p>
+<p>dup&lt;-c(probs[-1]&gt;=probs[-length(probs)], FALSE)
+TPR&lt;-c(0,TPR[!dup],1); FPR&lt;-c(0,FPR[!dup],1)</p>
+<p>n &lt;- length(TPR)
+auc&lt;- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )</p>
+<p>data.frame(acc,sens,spec,ppv,f1,auc)
+}
+# prints a confusion matrix to the screen
+conf_matrix&lt;-function(probs,truth,thresh = 0.5){
+table(factor(probs&gt;thresh,levels=c(“FALSE”,“TRUE”)),truth)
+}</p>
+</div>
+<div id="find-optimal-thresh-optimizes-the-decision-threshold-to-yield-the-maximum-f1-score" class="section level1">
+<h1>find optimal thresh optimizes the decision threshold to yield the maximum f1 score</h1>
+<p>find_optimal_thresh &lt;- function(fit,data_genes,probs,plot = FALSE){
+data_genes<span class="math inline">\(probs &lt;- probs # initialize f_df variable f_df &lt;- NULL # for i in 1000 iterations, get the f1-score for every possible cutoff between 0 and 1, incrementing 0.001 each iteration for (i in 1:1000){  f_df &lt;- rbind(f_df,data.frame(cutoff = i/1000,f1 =class_diag(data_genes\)</span>probs,data_genes<span class="math inline">\(Head_of_pancreas,i/1000)\)</span>f1))
+}
+data_genes &lt;- data_genes %&gt;% mutate(prediction=ifelse(probs&gt;thresh,“1”,“0”)) %&gt;% mutate(y = as.factor(Head_of_pancreas))
+# get decision threshold that yielded the highest F1-score
+thresh &lt;- (f_df %&gt;% arrange(desc(f1)))[1,] %&gt;% pull(cutoff)
+if (plot == TRUE){
+print(ggplot(f_df, aes(cutoff,f1)) +
+geom_line() +
+geom_vline(aes(xintercept = thresh)) +
+xlab(“Decision Threshold”) +
+ylab(“F1-score”) +
+theme_minimal() +
+ggtitle(“Identifying the Optimal Decision Threshold”))}</p>
+<p>return(thresh)}</p>
+</div>
+<div id="generate-density-plot-separated-by-head_of_pancreas-group" class="section level1">
+<h1>generate density plot separated by head_of_pancreas group</h1>
+<p>logit_density &lt;-function(fit,Head_of_pancreas){
+# plot frequency plot of logit for both classes
+print(data.frame(predict = predict(fit,type = “link”),Head_of_pancreas = Head_of_pancreas) %&gt;%
+ggplot(aes(predict)) +
+geom_density(aes(fill = Head_of_pancreas),alpha = 0.5) +
+theme_minimal() +
+geom_vline(aes(xintercept = 0)) +
+xlab(“logit”))}</p>
+<p>##```{</p>
+</div>
+<div id="b.-logistic-regression-predicting-head-of-pancreas-from-three-randomly-picked-genes" class="section level1">
+<h1>5b. Logistic Regression Predicting Head of Pancreas from Three Randomly Picked Genes</h1>
+<p>##```{{r Logistic with 3 Genes,message=FALSE}
+set.seed(5)
+data_genes &lt;- data %&gt;% select(Head_of_pancreas,contains(“ENSG”))
+data_genes &lt;- data_genes %&gt;% select(sample(2:ncol(data_genes),3),Head_of_pancreas)
+fit &lt;- glm(Head_of_pancreas ~.,family = “binomial”,data = data_genes,control = list(maxit = 75))</p>
+</div>
+<div id="get-class-probabilities" class="section level1">
+<h1>get class probabilities</h1>
+<p>data_genes$probs &lt;- predict(fit,type = “response”)
+summary(fit)
+exp(coef(fit))</p>
+<p>thresh &lt;- find_optimal_thresh(fit,data_genes, data_genes$probs,TRUE)</p>
+</div>
+<div id="get-relevant-metrics-on-fit" class="section level1">
+<h1>get relevant metrics on fit</h1>
+<p>class_diag(data_genes<span class="math inline">\(probs, data\)</span>Head_of_pancreas,thresh)
+# generate confusion matrix of fit
+conf_matrix(data_genes<span class="math inline">\(probs, data\)</span>Head_of_pancreas,thresh)</p>
+<p>logit_density(fit, data_genes$Head_of_pancreas)</p>
+<p>ggplot(data_genes)+geom_roc(aes(d=as.numeric(Head_of_pancreas),m=probs), n.cuts=0)
+##```{</p>
+<p>For this one I picked three random genes with which to work.</p>
+<p><strong>log(odds of class 1) = 0.07724(ENSG00000169347.15) - 0.17209(ENSG00000175535.6) + 0.10031(ENSG00000164266.9) + 0.39463</strong></p>
+<p>Log odds are hard to intrepret, so I exponentiate all of the coefficients.</p>
+<p>Controlling for ENSG00000175535.6 and ENSG00000164266.9, each one unit increase in ENSG00000169347.15 increases the odds of being class 1 by a factor of 1.0803008 (not significant)</p>
+<p>Controlling for ENSG00000169347.15 and ENSG00000164266.9, each one unit increase in ENSG00000175535.6 increases the odds of being class 1 by a factor of 1.1877791 (not significant)</p>
+<p>Controlling for ENSG00000169347.15 ENSG00000175535.6, each one unit increase in ENSG00000164266.9 increases the odds of being class 1 by a factor of 0.9045531 (not significant)</p>
+<p>Immediately, it’s clear that this model sacrifices specificity (0.1153846) for sensitivity (0.9923077). The model’s accuracy is 0.7417582 and its precision is 0.7371429 The F1-score is surprisingly high (0.8459016), which is never bad. The AUC is a lousy 0.6445266.</p>
+<p>The ROC curve has a very low AUC (0.6445266). This means that the model cannot achieve a high TPR without incurring a high FPR.</p>
+</div>
+<div id="a.-predicting-head-of-pancreas-from-all-genes" class="section level1">
+<h1>6a. Predicting Head of Pancreas from All Genes</h1>
+<p>##```{{r Logistic All Genes,message=FALSE}
+# pull out genes, head of pancreas
+data_genes &lt;- data %&gt;% select(contains(“ENSG”),Head_of_pancreas)
+# fit logistic model to all genes; predict log odds of Head_of_pancreas; maxit = 75 prevents model from failing with large numbers of variables
+fit &lt;- glm(Head_of_pancreas ~.,family = “binomial”,data = data_genes,control = list(maxit = 75))
+# get class probabilities
+data_genes$probs &lt;- predict(fit,type = “response”)
+summary(fit)</p>
+<p>thresh &lt;- find_optimal_thresh(fit,data_genes, data_genes$probs,TRUE)</p>
+</div>
+<div id="get-relevant-metrics-on-fit-1" class="section level1">
+<h1>get relevant metrics on fit</h1>
+<p>class_diag(data_genes<span class="math inline">\(probs, data\)</span>Head_of_pancreas,thresh)
+# generate confusion matrix of fit
+conf_matrix(data_genes<span class="math inline">\(probs, data\)</span>Head_of_pancreas,thresh)</p>
+</div>
+<div id="generate-roc-curve-for-fit" class="section level1">
+<h1>generate ROC curve for fit</h1>
+<p>ggplot(data_genes)+geom_roc(aes(d=as.numeric(Head_of_pancreas),m=probs), n.cuts=0)</p>
+<p>logit_density(fit,data_genes$Head_of_pancreas)
+##```{</p>
+<p>There are too many coefficients to count, but I’ll provide a template for their interpretation: <strong>variable</strong> has a coefficient of <strong>coeff</strong>. This means that for every one-unit increase in <strong>variable</strong>, log odds of head of pancreas (increases/decreases) by <strong>coeff</strong>. (if <code>Pr(&gt;|z|)</code> &lt; 0.05: significant; else: not significant)</p>
+<p>The model classifies 38 of the 52 false values as false. It classifies 124 of the 130 positive values as positive.</p>
+<p>The model performs very well. It is somewhat more sensitive (0.95) than it is specific (0.73); it gets a high accuracy (0.89); it has a precision of 0.899; it has a great f1 (0.925). The AUC is a great 0.932.</p>
+<p>The optimal decision threshold for this model is at probability = 0.498; anything above is classified a Head of Pancreas sample. Anything below is non-head of pancreas.</p>
+<p>The ROC curve has a very large AUC (0.932). This means that the model can achieve a very high TPR while maintaining a relatively low FPR.</p>
+</div>
+<div id="b.-10-fold-cv-with-all-variables" class="section level1">
+<h1>6b. 10 fold CV with all variables</h1>
+<p>##```{{r 10-fold CV,message=FALSE}</p>
+<p>data_genes &lt;- data %&gt;% select(contains(“ENSG”),Head_of_pancreas)
+k=10
+temp &lt;- data_genes[sample(nrow(data_genes)),]
+folds &lt;- cut(seq(1:nrow(data_genes)),breaks=k, labels = F)
+diags&lt;-NULL
+for(i in 1:k){
+train &lt;- temp[folds!=i,] #create training set (all but fold i)
+test &lt;- temp[folds==i,] #create test set (just fold i)
+truth &lt;- test$Head_of_pancreas #save truth labels from fold i
+fit &lt;- glm(Head_of_pancreas ~.,family = “binomial”,data = train,control = list(maxit = 75))
+probs &lt;- predict(fit, newdata=test, type=“response”)
+thresh &lt;- find_optimal_thresh(fit, train, predict(fit, type=“response”))
+diags&lt;- rbind(diags,class_diag(probs,truth,thresh))
+}
+summarize_all(diags,mean)
+##```{</p>
+<p>The 10-fold CV has exposed the degree to which the previous model had overfitted to the dataset. Even with optimal decision cutoffs, the AUC was only 0.632. Accuracy, sensitivity, specificity, precision, and f1 are 0.7186647, 0.442619, 0.7710556, and 0.7384776, respectively.</p>
+</div>
+<div id="c.-lasso" class="section level1">
+<h1>6c. LASSO</h1>
+<p>##```{{r LASSO,message=FALSE}
+set.seed(1234)
+data_genes &lt;- data %&gt;% select(contains(“ENSG”),Head_of_pancreas)
+y&lt;-as.matrix(data_genes<span class="math inline">\(Head_of_pancreas) preds&lt;-model.matrix(Head_of_pancreas~.,data=data_genes)[,-1] %&gt;% scale cv &lt;- cv.glmnet(preds,y, family=&quot;binomial&quot;) {plot(cv\)</span>glmnet.fit, “lambda”, label=TRUE); abline(v = log(cv<span class="math inline">\(lambda.1se))} lasso_fit &lt;-glmnet(preds,y,family=&quot;binomial&quot;,lambda=cv\)</span>lambda.1se)
+# probs &lt;- predict(lasso_fit, preds, type=“response”)
+# class_diag(probs,data_genes<span class="math inline">\(Head_of_pancreas,0.5) # conf_matrix(probs,data_genes\)</span>Head_of_pancreas)
+x &lt;- coef(lasso_fit)
+rownames(x)[x[,1] &gt; 0]</p>
+<p>##```{</p>
+<p>LASSO selected four genes as effective predictors:“ENSG00000108849.6” “ENSG00000175084.10” “ENSG00000188257.9” “ENSG00000172016.14”. Using these variables to train a model will make it much more generalizable.</p>
+</div>
+<div id="d.-10-fold-cv-on-lasso-honed-logistic-model" class="section level1">
+<h1>6d. 10-fold CV on LASSO-honed Logistic Model</h1>
+<p>##<code>{{r 10-fold CV on LASSO,message=FALSE} data_genes &lt;- data %&gt;% select(ENSG00000108849.6, ENSG00000175084.10, ENSG00000188257.9, ENSG00000172016.14,Head_of_pancreas) k=10 temp &lt;- data_genes[sample(nrow(data_genes)),] folds &lt;- cut(seq(1:nrow(data_genes)),breaks=k, labels = F) diags&lt;-NULL for(i in 1:k){ train &lt;- temp[folds!=i,] #create training set (all but fold i) test &lt;- temp[folds==i,] #create test set (just fold i) truth &lt;- test$Head_of_pancreas #save truth labels from fold i fit &lt;- glm(Head_of_pancreas ~.,family = &quot;binomial&quot;,data = train) probs &lt;- predict(fit, newdata=test, type=&quot;response&quot;) thresh &lt;- find_optimal_thresh(fit, train, predict(fit, type=&quot;response&quot;)) diags&lt;- rbind(diags,class_diag(probs,truth, thresh)) } summarize_all(diags,mean) ##</code>{</p>
+<p>I suppose this is the best I can do given the tools we’ve learned in this course. The AUC is terrible (0.680). While sensitivity is great (0.93), specificity is non-existent (0.1). This tells me that the decision threshold chosen for my model is basically near 0, and it is classifying everything as Head of pancreas. Accuracy is bad, but not atrocious (0.69). Precision and f1 score are 0.72 and 0.81, respectively.</p>
+<p>Although this model gets lower scores than some of its predecessors, it is much more generalizable than those previous models and will thus perform better than them on new data.</p>
+<pre><code>## R version 3.6.0 (2019-04-26)
+## Platform: x86_64-apple-darwin15.6.0 (64-bit)
+## Running under: macOS  10.15.6
+## 
+## Matrix products: default
+## BLAS:   /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRblas.0.dylib
+## LAPACK: /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRlapack.dylib
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## loaded via a namespace (and not attached):
+##  [1] compiler_3.6.0  magrittr_1.5    bookdown_0.19   formatR_1.7    
+##  [5] tools_3.6.0     htmltools_0.4.0 yaml_2.2.1      Rcpp_1.0.4.6   
+##  [9] stringi_1.4.6   rmarkdown_2.2   blogdown_0.19   knitr_1.28     
+## [13] stringr_1.4.0   digest_0.6.25   xfun_0.14       rlang_0.4.6    
+## [17] evaluate_0.14</code></pre>
+<pre><code>## [1] &quot;2020-12-08 21:02:20 CST&quot;</code></pre>
+<pre><code>##                                                                                            sysname 
+##                                                                                           &quot;Darwin&quot; 
+##                                                                                            release 
+##                                                                                           &quot;19.6.0&quot; 
+##                                                                                            version 
+## &quot;Darwin Kernel Version 19.6.0: Thu Jun 18 20:49:00 PDT 2020; root:xnu-6153.141.1~1/RELEASE_X86_64&quot; 
+##                                                                                           nodename 
+##                                                                                  &quot;Extension.local&quot; 
+##                                                                                            machine 
+##                                                                                           &quot;x86_64&quot; 
+##                                                                                              login 
+##                                                                                             &quot;root&quot; 
+##                                                                                               user 
+##                                                                                       &quot;ryanbailey&quot; 
+##                                                                                     effective_user 
+##                                                                                       &quot;ryanbailey&quot;</code></pre>
+</div>
+
+    </div>
+
+    
+
+
+
+
+
+
+
+
+<div class="share-box" aria-hidden="true">
+  <ul class="share">
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://twitter.com/intent/tweet?url=/post/project2/&amp;text=Fitting%20Models%20on%20High%20Dimensional%20Biological%20Data%20%28in%20R%29" target="_blank" rel="noopener" class="share-btn-twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.facebook.com/sharer.php?u=/post/project2/&amp;t=Fitting%20Models%20on%20High%20Dimensional%20Biological%20Data%20%28in%20R%29" target="_blank" rel="noopener" class="share-btn-facebook">
+          <i class="fab fa-facebook"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="mailto:?subject=Fitting%20Models%20on%20High%20Dimensional%20Biological%20Data%20%28in%20R%29&amp;body=/post/project2/" target="_blank" rel="noopener" class="share-btn-email">
+          <i class="fas fa-envelope"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.linkedin.com/shareArticle?url=/post/project2/&amp;title=Fitting%20Models%20on%20High%20Dimensional%20Biological%20Data%20%28in%20R%29" target="_blank" rel="noopener" class="share-btn-linkedin">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="whatsapp://send?text=Fitting%20Models%20on%20High%20Dimensional%20Biological%20Data%20%28in%20R%29%20/post/project2/" target="_blank" rel="noopener" class="share-btn-whatsapp">
+          <i class="fab fa-whatsapp"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://service.weibo.com/share/share.php?url=/post/project2/&amp;title=Fitting%20Models%20on%20High%20Dimensional%20Biological%20Data%20%28in%20R%29" target="_blank" rel="noopener" class="share-btn-weibo">
+          <i class="fab fa-weibo"></i>
+        </a>
+      </li>
+    
+  </ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+  
+    
+    
+    
+      
+    
+    
+    
+    <div class="media author-card content-widget-hr">
+      
+        
+        <img class="avatar mr-3 avatar-circle" src="/author/ryan-bailey/avatar_hud4850302d1efab0fdc288d8c342a39cd_394260_270x270_fill_q90_lanczos_center.jpg" alt="Ryan Bailey">
+      
+
+      <div class="media-body">
+        <h5 class="card-title"><a href="/">Ryan Bailey</a></h5>
+        <h6 class="card-subtitle">Bioinformatician, Pre-Medical Student, and Photographer in Austin, Texas.</h6>
+        <p class="card-text">My interests include unsupervised learning, oncology, computer vision. matter.</p>
+        <ul class="network-icon" aria-hidden="true">
+  
+    
+    
+    
+      
+    
+    
+    
+    
+    
+      
+    
+    <li>
+      <a href="/#contact" >
+        <i class="fas fa-envelope"></i>
+      </a>
+    </li>
+  
+    
+    
+    
+      
+    
+    
+    
+    
+    
+      
+    
+    <li>
+      <a href="https://github.com/fistoffebruary" target="_blank" rel="noopener">
+        <i class="fab fa-github"></i>
+      </a>
+    </li>
+  
+    
+    
+    
+      
+    
+    
+    
+    
+    
+      
+    
+    <li>
+      <a href="https://www.linkedin.com/in/ryan-bailey-421295146/" target="_blank" rel="noopener">
+        <i class="fab fa-linkedin-in"></i>
+      </a>
+    </li>
+  
+    
+    
+    
+      
+    
+    
+    
+    
+    
+      
+    
+    <li>
+      <a href="https://stackoverflow.com/users/11357404/ryan-bailey" target="_blank" rel="noopener">
+        <i class="fab fa-stack-overflow"></i>
+      </a>
+    </li>
+  
+</ul>
+
+      </div>
+    </div>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+  </div>
+</article>
+
+      
+
+    
+    
+    
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js" integrity="sha256-lqvxZrPLtfffUl2G/e7szqSvPBILGbwmsGE1MKlOi0Q=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.js" integrity="sha256-CBrpuqrMhXwcLLUd5tvQ4euBHCdh7wGlDfNz8vbu/iI=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/instant.page/5.1.0/instantpage.min.js" integrity="sha512-1+qUtKoh9XZW7j+6LhRMAyOrgSQKenQ4mluTR+cvxXjP1Z54RxZuzstR/H9kgPXQsVB8IW7DMDFUJpzLjvhGSQ==" crossorigin="anonymous"></script>
+
+      
+
+      
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/highlight.min.js" integrity="sha512-7t8APmYpzEsZP7CYoA7RfMPV9Bb+PJHa9x2WiUnDXZx3XHveuyWUtvNOexhkierl5flZ3tr92dP1mMS+SGlD+A==" crossorigin="anonymous"></script>
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/languages/r.min.js"></script>
+        
+      
+
+    
+
+    
+    
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.5.1/leaflet.js" integrity="sha256-EErZamuLefUnbMBQbsEqu1USa+btR2oIlCpBJbyD4/g=" crossorigin="anonymous"></script>
+    
+
+    
+    
+    <script>const code_highlighting = true;</script>
+    
+
+    
+    
+    <script>const isSiteThemeDark = false;</script>
+    
+
+    
+    
+    
+    
+    
+    
+    <script>
+      const search_config = {"indexURI":"/index.json","minLength":1,"threshold":0.3};
+      const i18n = {"no_results":"No results found","placeholder":"Search...","results":"results found"};
+      const content_type = {
+        'post': "Posts",
+        'project': "Projects",
+        'publication' : "Publications",
+        'talk' : "Talks",
+        'slides' : "Slides"
+        };
+    </script>
+    
+
+    
+    
+
+    
+    
+    <script id="search-hit-fuse-template" type="text/x-template">
+      <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <a href="{{relpermalink}}">{{title}}</a>
+          <div class="article-metadata search-hit-type">{{type}}</div>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+      </div>
+    </script>
+    
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha256-VzgmKYmhsGNNN4Ph1kMW+BjoYJM2jV5i4IlFoeZA9XI=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha256-4HLtjeVgH0eIB3aZ9mLYF6E8oU5chNdjU6p6rrXpl9U=" crossorigin="anonymous"></script>
+    
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+    
+    
+    
+    
+    <script src="/js/academic.min.3b2b658c61ebd725bd5fc606c89fe44c.js"></script>
+
+    
+
+
+
+
+
+
+  
+  
+  <div class="container">
+    <footer class="site-footer">
+  
+  <p class="powered-by">
+    
+      <a href="/privacy/">Privacy Policy</a>
+    
+    
+       &middot; 
+      <a href="/terms/">Terms</a>
+    
+  </p>
+  
+
+  <p class="powered-by">
+    
+  </p>
+
+  
+  
+
+
+
+
+
+
+  <p class="powered-by">
+    
+    Published with
+    <a href="https://sourcethemes.com/academic/" target="_blank" rel="noopener">Academic Website Builder</a>
+    
+
+    
+    <span class="float-right" aria-hidden="true">
+      <a href="#" class="back-to-top">
+        <span class="button_icon">
+          <i class="fas fa-chevron-up fa-2x"></i>
+        </span>
+      </a>
+    </span>
+    
+  </p>
+</footer>
+
+  </div>
+  
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cite</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> Copy
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> Download
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

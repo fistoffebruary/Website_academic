@@ -1,0 +1,382 @@
+---
+title: "Exploratory Data Analysis in R"
+author: "Ryan Bailey"
+date: '2020-10-17'
+thumbnail: "featured.jpg"
+image:
+  caption: 'Photo by Daniel von Appen on Unsplash'
+  placement: 3
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+---
+
+<script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
+<script src="/rmarkdown-libs/viz/viz.js"></script>
+<link href="/rmarkdown-libs/DiagrammeR-styles/styles.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/grViz-binding/grViz.js"></script>
+<script src="/rmarkdown-libs/plotly-binding/plotly.js"></script>
+<script src="/rmarkdown-libs/typedarray/typedarray.min.js"></script>
+<script src="/rmarkdown-libs/jquery/jquery.min.js"></script>
+<link href="/rmarkdown-libs/crosstalk/css/crosstalk.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/crosstalk/js/crosstalk.min.js"></script>
+<link href="/rmarkdown-libs/plotly-htmlwidgets-css/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/plotly-main/plotly-latest.min.js"></script>
+
+
+<div id="eid-reb3566" class="section level3">
+<h3>EID: REB3566</h3>
+</div>
+<div id="introduction" class="section level1">
+<h1>0. Introduction</h1>
+<p>Three datasets are combined and explored in this R markdown file. The <a href="https://data.world/adamhelsinger/cancer-rates-by-u-s-state">first dataset</a> contains cancer mortality and incidence by states in the United States. The <a href="https://data.world/wendyhe/how-religious-is-your-state">second dataset</a> has relevant religiosity rankings (number of congregations, number of adherents per 1,000 people) by state. The final dataset lists each state by region (West, Southeast, Southwest, Northeast, and Midwest). The first two datasets were downloaded from data.world. The Regions dataset was constructed by hand from information found on <a href="https://www.ducksters.com/geography/us_states/us_geographical_regions.php">ducksters.com/geography</a>.</p>
+<p>I would like to investigate relationships between state/regional religiosity and cancer rates and incidences. I do not expect to find any prominent associations within the data. The datasets neglect dozens (if not hundreds) of potential confounds and biases. If cancer incidence or mortality rates are correlated with religiosity, this is likely because Bible Belt states have more inadequate healthcare than other US regions. Mortality and incidence may differ to some extent by region, but this difference is unlikely to be statistically significant.</p>
+<div id="import-libraries" class="section level2">
+<h2>Import libraries</h2>
+<pre class="r"><code># specific data import instructions
+library(readr)
+
+# data wrangling
+library(tidyverse)
+
+# plotting
+library(ggplot2)
+library(plotly)
+library(GGally)
+
+# for making clustered correlation heatmap
+library(prettyR)
+library(reshape2)
+library(ComplexHeatmap)
+library(circlize)
+
+
+# for Kmeans and PAM Clustering
+library(cluster)
+
+# for PCA Biplot
+library(factoextra)
+
+# for Pretty Workflows
+library(DiagrammeR)</code></pre>
+</div>
+<div id="workflow" class="section level2">
+<h2>Workflow</h2>
+<p>I realize that there’s a lot going on with my Project. It’s very figure-heavy, which I know makes it feel more cluttered; I just hope makes it also makes it more informative. I included my workflow to try and clarify my process and to let you know what things to expect and the order to expect them in. It was also a really cool opportunity to use DiagrameR.</p>
+<pre class="r"><code>grViz(&quot;digraph flowchart {
+      # node definitions with substituted label text
+      node [fontname = Helvetica, shape = rectangle]        
+      tab1 [label = &#39;@@1&#39;]
+      tab2 [label = &#39;@@2&#39;]
+      tab3 [label = &#39;@@3&#39;]
+      tab4 [label = &#39;@@4&#39;]
+      tab5 [label = &#39;@@5&#39;]
+      tab6 [label = &#39;@@6&#39;]
+      tab7 [label = &#39;@@7&#39;]
+      tab8 [label = &#39;@@8&#39;]
+      tab9 [label = &#39;@@9&#39;]
+      tab10 [label = &#39;@@10&#39;]
+      tab11 [label = &#39;@@11&#39;]
+      tab12 [label = &#39;@@12&#39;]
+      tab13 [label = &#39;@@13&#39;]
+      tab14 [label = &#39;@@14&#39;]
+      tab15 [label = &#39;@@15&#39;]
+
+      # edge definitions with the node IDs
+      tab1 -&gt; tab2 -&gt; tab3 -&gt; tab4 -&gt; tab5 -&gt; tab6 -&gt; tab7 -&gt; tab8;
+      tab8 -&gt; tab9;
+      tab8 -&gt; tab10 -&gt; tab12 -&gt; tab13;
+      tab8 -&gt; tab11 -&gt; tab14 -&gt; tab15;
+      tab9 -&gt; tab13;
+      tab9 -&gt; tab15
+      }
+
+      [1]: &#39;Import libraries&#39;
+      [2]: &#39;Import All 3 Datasets&#39;
+      [3]: &#39;Join All 3 Datasets&#39;
+      [4]: &#39;Drop Irrelevant Variables from Joined Dataset&#39;
+      [5]: &#39;Summarize Dataset with Summary Stats for Each Variable and GGPairs Plot&#39;
+      [6]: &#39;Visualize Different Variables and the Relationships Between Them&#39;
+      [7]: &#39;Summarize Dataset with Summary Stats for Each Variable and GGPairs Plot&#39;
+      [8]: &#39;Extract Numeric Variables From Dataset&#39;
+      [9]: &#39;Run PCA Only on Numeric Variables&#39;
+      [10]: &#39;Validate Optimal K for Kmeans&#39;
+      [11]: &#39;Validate Optimal K for PAM&#39;
+      [12]: &#39;Perform Kmeans Clustering Using Optimal K&#39;
+      [13]: &#39;Visualize Kmeans Clusters In Feature Space&#39;
+      [14]: &#39;Perform PAM Clustering Using Optimal K&#39;
+      [15]: &#39;Visualize PAM Clusters In Feature Space&#39;
+      &quot;)</code></pre>
+<div id="htmlwidget-1" style="width:672px;height:480px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"diagram":"digraph flowchart {\n      # node definitions with substituted label text\n      node [fontname = Helvetica, shape = rectangle]        \n      tab1 [label = \"Import libraries\"]\n      tab2 [label = \"Import All 3 Datasets\"]\n      tab3 [label = \"Join All 3 Datasets\"]\n      tab4 [label = \"Drop Irrelevant Variables from Joined Dataset\"]\n      tab5 [label = \"Summarize Dataset with Summary Stats for Each Variable and GGPairs Plot\"]\n      tab6 [label = \"Visualize Different Variables and the Relationships Between Them\"]\n      tab7 [label = \"Summarize Dataset with Summary Stats for Each Variable and GGPairs Plot\"]\n      tab8 [label = \"Extract Numeric Variables From Dataset\"]\n      tab9 [label = \"Run PCA Only on Numeric Variables\"]\n      tab10 [label = \"Validate Optimal K for Kmeans\"]\n      tab11 [label = \"Validate Optimal K for PAM\"]\n      tab12 [label = \"Perform Kmeans Clustering Using Optimal K\"]\n      tab13 [label = \"Visualize Kmeans Clusters In Feature Space\"]\n      tab14 [label = \"Perform PAM Clustering Using Optimal K\"]\n      tab15 [label = \"Visualize PAM Clusters In Feature Space\"]\n\n      # edge definitions with the node IDs\n      tab1 -> tab2 -> tab3 -> tab4 -> tab5 -> tab6 -> tab7 -> tab8;\n      tab8 -> tab9;\n      tab8 -> tab10 -> tab12 -> tab13;\n      tab8 -> tab11 -> tab14 -> tab15;\n      tab9 -> tab13;\n      tab9 -> tab15\n      }","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="import-datasets" class="section level2">
+<h2>Import datasets</h2>
+<pre class="r"><code># read datasets
+cancer_states &lt;- read_csv(&quot;datasets/cancer_states.csv&quot;)
+religion_states &lt;- read_csv(&quot;datasets/religion_states.csv&quot;)
+region_states &lt;- read_csv(&quot;datasets/region_states.csv&quot;)
+
+# dataset dimensions
+cancer_states %&gt;% dim</code></pre>
+<pre><code>## [1] 50  5</code></pre>
+<pre class="r"><code>religion_states %&gt;% dim</code></pre>
+<pre><code>## [1] 50  8</code></pre>
+<pre class="r"><code>region_states %&gt;% dim</code></pre>
+<pre><code>## [1] 50  2</code></pre>
+</div>
+</div>
+<div id="joiningmerging" class="section level1">
+<h1>2. Joining/Merging</h1>
+<p>Since I have three datasets, I have to perform two joins. I used inner_join() for both because I only want complete cases. NAs were not a problem as the datasets were relatively small, had no missing values, and used the same identifiers for states.</p>
+<div id="a.-joining-datasets" class="section level2">
+<h2>2a. Joining Datasets</h2>
+<pre class="r"><code># none of the datasets have a colname for the first column; join each dataset by this column
+data &lt;- inner_join(cancer_states, religion_states, by = c(&quot;X1&quot; = &quot;X1&quot;)) %&gt;% inner_join(region_states, by = c(&quot;X1&quot; = &quot;X1&quot;))
+data %&gt;% glimpse</code></pre>
+<pre><code>## Rows: 50
+## Columns: 13
+## $ X1                                      &lt;chr&gt; &quot;Alaska&quot;, &quot;Alabama&quot;, &quot;Arkansa…
+## $ mo_Rate                                 &lt;dbl&gt; 173.1, 182.1, 189.6, 146.4, 1…
+## $ mo_range_low                            &lt;dbl&gt; 164.2, 174.5, 174.5, 127.9, 1…
+## $ mo_range_high                           &lt;dbl&gt; 174.4, 199.3, 199.3, 155.3, 1…
+## $ in_Rate                                 &lt;dbl&gt; 406.6, 437.9, 456.2, 379.8, 3…
+## $ in_range_low                            &lt;dbl&gt; 369.9, 420.4, 447.0, 369.9, 3…
+## $ in_range_high                           &lt;dbl&gt; 416.5, 445.7, 461.0, 416.5, 4…
+## $ total_number_of_congregations           &lt;dbl&gt; 1246, 10514, 6697, 4673, 2355…
+## $ total_number_of_adherents               &lt;dbl&gt; 240833, 3007553, 1614357, 237…
+## $ rates_of_adherence_per_1_000_population &lt;dbl&gt; 339.09, 629.23, 553.64, 372.3…
+## $ of_adherents                            &lt;dbl&gt; 0.33909, 0.62923, 0.55364, 0.…
+## $ of_adults_who_are_highly_religious      &lt;dbl&gt; 0.45, 0.77, 0.70, 0.53, 0.49,…
+## $ Region                                  &lt;chr&gt; &quot;West&quot;, &quot;Southeast&quot;, &quot;Southea…</code></pre>
+</div>
+</div>
+<div id="and-3-tidying-and-wrangling" class="section level1">
+<h1>1 and 3: Tidying and Wrangling</h1>
+<p>I perform data tidying after joining. Here I use pivot functions to make summary statistics more digestible. I use pivot_longer to reformat the summarized output from a single row with ~54 variables (one for each variable and each summary stat) to one with 3 variables (variable, stat, and value) and 54 rows. I pivot wider to give a final table of 8 variables (each numeric variable in the dataset) and 9 rows (each type of summary statistic used).</p>
+<p>I also drop mo/in_range_high/low and total number of religious adherence. These first four variables correspond to the mortality and incidence 95% confidence intervals. The dataset contains a rate of adherence variable that makes total adherence obsolete (due to its bias towards more populous states).</p>
+<div id="a.-summary-statistics---6-core-dplyr-functions" class="section level2">
+<h2>3a. Summary Statistics - 6 Core dplyr Functions</h2>
+<pre class="r"><code># xx_range_high/low are just the 95% CI for the mortality and incidence rates
+# total number of adherents is highly dependent on state population; this is dropped because there is a rates of adherence per 1000 people variable
+data &lt;- data %&gt;% select(!c(mo_range_low,mo_range_high,in_range_low,in_range_high, total_number_of_adherents))
+
+# use of all 6 core dplyr functions
+data %&gt;% group_by(Region) %&gt;% summarize(total_cong = sum(total_number_of_congregations), mean_cong = mean(total_number_of_congregations), sd_cong = sd(total_number_of_congregations)) %&gt;% filter(Region != &quot;West&quot;) %&gt;% select(!c(total_cong)) %&gt;% arrange(mean_cong) %&gt;% mutate(plus_one_sd = mean_cong + sd_cong,minus_one_sd = mean_cong - sd_cong )</code></pre>
+<pre><code>## `summarise()` ungrouping output (override with `.groups` argument)</code></pre>
+<pre><code>## # A tibble: 4 x 5
+##   Region    mean_cong sd_cong plus_one_sd minus_one_sd
+##   &lt;chr&gt;         &lt;dbl&gt;   &lt;dbl&gt;       &lt;dbl&gt;        &lt;dbl&gt;
+## 1 Northeast     4789.   5276.      10065.        -487.
+## 2 Midwest       6812.   3957.      10769.        2854.
+## 3 Southeast     9608    3683.      13291.        5925.
+## 4 Southwest    10506.  11713.      22220.       -1207.</code></pre>
+</div>
+<div id="a-and-3b-summary-statistics---summarize" class="section level2">
+<h2>1a and 3b: Summary Statistics - Summarize</h2>
+<pre class="r"><code># This is an infinitely wordier way to create the summary tables I love in Python Pandas; every variable gets a full suite of summary statistics
+N &lt;- nrow(data)
+
+data %&gt;% summarize_if(is.numeric,list(xxxmean = mean, xxxsd = sd ,  xxxse = function(x) sd(x) / sqrt(N), xxxmin = min,xxxper25 = function(x) quantile(x,0.25), xxxmedian = median,xxxper75 = function(x) quantile(x, 0.75),xxxmax =  max, xxxrange = function(x) max(x) - min(x))) %&gt;% pivot_longer(cols = everything()) %&gt;% separate(name, into = c(&quot;variable&quot;, &quot;stat&quot;), sep = &quot;_xxx&quot;) %&gt;% pivot_wider(names_from = variable, values_from = value)</code></pre>
+<pre><code>## # A tibble: 9 x 7
+##   stat  mo_Rate in_Rate total_number_of… rates_of_adhere… of_adherents
+##   &lt;chr&gt;   &lt;dbl&gt;   &lt;dbl&gt;            &lt;dbl&gt;            &lt;dbl&gt;        &lt;dbl&gt;
+## 1 mean   165.    440.              6886.            483.        0.483 
+## 2 sd      15.6    31.1             5840.            103.        0.103 
+## 3 se       2.20    4.39             826.             14.6       0.0146
+## 4 min    128.    370.               677             276.        0.276 
+## 5 per25  155.    417.              2432             400.        0.400 
+## 6 medi…  164.    446.              5699             507.        0.507 
+## 7 per75  174.    461.              9406             553.        0.553 
+## 8 max    199.    514.             27848             791.        0.791 
+## 9 range   71.4   144.             27171             515.        0.515 
+## # … with 1 more variable: of_adults_who_are_highly_religious &lt;dbl&gt;</code></pre>
+<pre class="r"><code>data %&gt;% group_by(Region) %&gt;% summarize_if(is.numeric,list(xxxmean = mean, xxxsd = sd ,  xxxse = function(x) sd(x) / sqrt(N), xxxmin = min,xxxper25 = function(x) quantile(x,0.25), xxxmedian = median,xxxper75 = function(x) quantile(x, 0.75),xxxmax =  max, xxxrange = function(x) max(x) - min(x))) %&gt;% pivot_longer(cols = !Region) %&gt;% separate(name, into = c(&quot;variable&quot;, &quot;stat&quot;), sep = &quot;_xxx&quot;) %&gt;% pivot_wider(names_from = variable, values_from = value)</code></pre>
+<pre><code>## # A tibble: 45 x 8
+##    Region stat  mo_Rate in_Rate total_number_of… rates_of_adhere… of_adherents
+##    &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;   &lt;dbl&gt;            &lt;dbl&gt;            &lt;dbl&gt;        &lt;dbl&gt;
+##  1 Midwe… mean   166.    450.              6812.           526.        0.526  
+##  2 Midwe… sd       9.85   11.6             3957.            70.5       0.0705 
+##  3 Midwe… se       1.39    1.65             560.             9.97      0.00997
+##  4 Midwe… min    151.    431.              1498            421.        0.421  
+##  5 Midwe… per25  159.    442.              4302.           480.        0.480  
+##  6 Midwe… medi…  166.    450.              6016.           537.        0.537  
+##  7 Midwe… per75  173.    458.              9176            558.        0.558  
+##  8 Midwe… max    179.    472.             13606            671.        0.671  
+##  9 Midwe… range   28.6    40.5            12108            250.        0.250  
+## 10 North… mean   163.    466.              4789.           457.        0.457  
+## # … with 35 more rows, and 1 more variable:
+## #   of_adults_who_are_highly_religious &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<div id="visualizing" class="section level1">
+<h1>4. Visualizing</h1>
+<div id="ggpairs-a-hierarchically-clustered-correlation-heatmap-faceted-boxplot-violin-plot-and-faceted-scatterplot-bubbleplot" class="section level4">
+<h4>GGPairs, A Hierarchically Clustered Correlation Heatmap, Faceted Boxplot, Violin Plot, and Faceted Scatterplot (Bubbleplot)</h4>
+</div>
+<div id="a.-ggpairs-plot-to-view-relationships-between-each-variables" class="section level2">
+<h2>4a. GGPairs Plot to View Relationships Between Each Variables</h2>
+<pre class="r"><code># pairwise summary plots like ggpairs are great for getting a mile-high view of the dataset. They fall apart when you get more than 8 or 9 variables.
+data %&gt;% select(!X1) %&gt;% ggpairs(aes(color = as.factor(data$Region)), progress = F)</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-7-1.png" width="1440" style="display: block; margin: auto;" />
+Few significant relationships jump out in the GGPairs plot. There appears to be a significant, strong, and positive correlation between cancer mortality rate and the total number of congregations in the midwest. Also, there seems to be a significant, strong, and negative correlation between cancer mortality rate and adherence rate per 1000 people in the midwest.</p>
+</div>
+<div id="b-hierarchically-clustered-correlation-heatmap" class="section level2">
+<h2>4b Hierarchically Clustered Correlation Heatmap</h2>
+<pre class="r"><code># I personally find correlation geom_tiles hard to read. I found this package called ComplexHeatmap which will Hierarchically cluster the correlation values. This places similar variable combinations together and makes correlations quite a bit easier to assess.
+
+# define color function
+col_fun = colorRamp2(c(-1, 0, 1), c(&quot;green&quot;, &quot;black&quot;, &quot;red&quot;))
+
+# generate a clustered heatmap for the correlation matrix
+Heatmap(data %&gt;% select_if(is.numeric) %&gt;% cor(use=&quot;pair&quot;) %&gt;% as.matrix, 
+        name = &quot;Correlation Matrix of Numeric Variables&quot;, #title of legend
+        column_title = &quot;&quot;, row_title = &quot;&quot;,
+        row_names_gp = gpar(fontsize = 6), 
+        column_names_gp = gpar(fontsize = 6),
+        col = col_fun) # Text size for row names</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-9-1.png" width="768" /></p>
+<p>As identified in the ggpairs plot, there are few strong correlations between any variables (save for the variables that are obviously related e.g., of_adherents and rates of adherence per 1000). This will show the same thing as a geom_tile, but here, it’s a little easier to see the relationships between variables since similarly correlated variables are “clustered” closely together.</p>
+<p><em>Interestingly (or maybe not interestingly) the variable correlations cluster based on the dataset from which they originate. This is likely because mortality and incidence often go hand in hand.</em></p>
+</div>
+<div id="c.-boxplot-using-statsummary-and-facet_wrap" class="section level2">
+<h2>4c. Boxplot Using stat=“summary” and facet_wrap</h2>
+<pre class="r"><code>f &lt;- function(x) {
+  r &lt;- quantile(x, probs = c(0.10, 0.25, 0.5, 0.75, 0.90))
+  names(r) &lt;- c(&quot;ymin&quot;, &quot;lower&quot;, &quot;middle&quot;, &quot;upper&quot;, &quot;ymax&quot;)
+  r
+}
+order &lt;- c(&quot;low&quot;,&quot;moderate&quot;,&quot;high&quot;)
+df &lt;- data %&gt;% mutate(mo_rate_f= as.factor(cut(mo_Rate, breaks=c(115,150,170, 250), labels = order,levels=order))) %&gt;% group_by(Region) %&gt;% as.data.frame
+
+df %&gt;% ggplot(aes(Region,total_number_of_congregations)) + geom_boxplot(aes(fill = Region), stat = &quot;summary&quot;, fun.data = f, position = position_dodge(1), alpha = 1) + scale_fill_viridis_d() + theme_minimal() + ylab(&quot;Total Number of Congregations&quot;)+ facet_wrap(~mo_rate_f) + coord_flip() + ggtitle(&quot;Total Number of Congregations By Region&quot;, subtitle = &quot;Faceted by low, moderate, and high mortality rates&quot;)</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>Here are horizontal boxplots comparing the number of congregations by region and low, moderate, high cancer mortality rates. The low number of samples causes some boxplots to spawn as just their median. The only stand-out difference between groups is between the West and Southeast regions in the moderate mortality rate group.</p>
+</div>
+<div id="d.-violin-plot" class="section level2">
+<h2>4d. Violin Plot</h2>
+<pre class="r"><code>data %&gt;% ggplot(aes(x=Region, y=in_Rate)) +
+  geom_violin(aes(x=Region, y=in_Rate, fill = Region) ,alpha = 0.5,trim = F, draw_quantiles=0:2/2) + geom_jitter(aes(color = rates_of_adherence_per_1_000_population),alpha = 1, size = 3) + scale_color_gradient(low = &#39;blue&#39;, high = &#39;red&#39;)+ theme_minimal() + ylab(&quot;Cancer Incidence Rate&quot;) + xlab(&#39;Region&#39;) + ggtitle(&quot;Cancer Incidence by Region&quot;) + scale_fill_viridis_d()</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p>This plot compares cancer incidence and rates of adherence between regions. We can see that there is a much higher cancer incidence in the Northeast than there is in the West. There is also greater rates of adherence in the Southeast than there is in the West.</p>
+</div>
+<div id="e.-faceted-scatterplot-with-linear-models-and-custom-axis-ticks" class="section level2">
+<h2>4e. Faceted Scatterplot with linear models and custom axis ticks</h2>
+<pre class="r"><code>data %&gt;% ggplot(aes(x=mo_Rate, y=rates_of_adherence_per_1_000_population)) + geom_point(aes(size = mo_Rate, color = Region),alpha = 0.5) + scale_size(range = c(.1, 7), name=&quot;Cancer Incidence&quot;) + geom_smooth(aes(color= Region,group=Region), method = &quot;lm&quot;, se=T,alpha = 0.2)+ scale_y_continuous(breaks = seq(0,700, 200), limits = c(0,700)) + scale_color_viridis_d() + theme_minimal() + facet_wrap(~Region) + xlab(&quot;Mortality Rate&quot;) + ylab(&quot;Rates of Adherence (per 1000 people)&quot;) + ggtitle(&quot;Rates of Religous Adherence by Mortality Rate&quot;, subtitle = &quot;Faceted by Region, Sized by Cancer Incidence, Linear Model Fitted by Region&quot;)</code></pre>
+<pre><code>## `geom_smooth()` using formula &#39;y ~ x&#39;</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p>Facet scatterplot of cancer mortality rate and rate of religious adherence. They were grouped by Region, sized by cancer incidence rate. LM fitted to each group. This plot clarifies slight relationships between religiosity and cancer mortality rates. As expected, these relationships tend to be weak.</p>
+</div>
+</div>
+<div id="dimensionality-reduction-and-clustering" class="section level1">
+<h1>5. Dimensionality Reduction and Clustering</h1>
+<div id="a.-running-pca-on-dataset" class="section level2">
+<h2>5a. Running PCA on Dataset</h2>
+<pre class="r"><code>set.seed(421)
+data_pca &lt;-data %&gt;% select_if(is.numeric) %&gt;% scale %&gt;% princomp 
+data_pca_df&lt;- data.frame(PC1=data_pca$scores[, 1], PC2=data_pca$scores[, 2], PC3 = data_pca$scores[, 3]) %&gt;%mutate(name = as.character(data$X1), Region = as.character(data$Region))
+
+eigval &lt;-  data_pca$sdev^2 
+varprop=round(eigval/sum(eigval), 2)</code></pre>
+</div>
+<div id="a.-assess-variance-encompassed-by-each-principal-component" class="section level2">
+<h2>5a. Assess Variance Encompassed by Each Principal Component</h2>
+<pre class="r"><code>ggplot() + geom_bar(aes(y=varprop, x=1:6), stat=&quot;identity&quot;) + xlab(&quot;&quot;) + geom_path(aes(y=varprop, x=1:6)) + geom_text(aes(x=1:6, y=varprop, label=round(varprop, 2)), vjust=1, col=&quot;white&quot;, size=5) + 
+  scale_y_continuous(breaks=seq(0, .6, .2), labels = scales::percent) + 
+  scale_x_continuous(breaks=1:10, limit = c(0.5,5.5)) + ggtitle(&quot;Variation Within Each Prinicpal Component&quot;) + ylab(&quot;Variation&quot;) + xlab(&quot;Principal Components&quot;) + theme_minimal()</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<p>It appears that the first two principal components encompass ~68% of my data’s variation. I can capture up to ~ 86% variation if I visualize my data with the first three principal components.</p>
+</div>
+<div id="a.-visualizing-data-by-region-after-pca" class="section level2">
+<h2>5a. Visualizing Data By Region After PCA</h2>
+<pre class="r"><code>fviz_pca_biplot(data_pca, habillage = data_pca_df$Region,label =&quot;var&quot;) + theme_minimal()</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre class="r"><code>data_pca_df %&gt;% plot_ly(x=~PC1, y=~PC2, z=~PC3, type=&quot;scatter3d&quot;, mode=&quot;markers&quot;, color = ~Region) %&gt;% layout(scene = list(xaxis = list(title = &#39;PC1 (0.44)&#39;), yaxis = list(title = &#39;PC2 (0.24)&#39;), zaxis = list(title = &#39;PC3 (0.18)&#39;)))</code></pre>
+<div id="htmlwidget-2" style="width:672px;height:480px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-2">{"x":{"visdat":{"9edf71aa6a5f":["function () ","plotlyVisDat"]},"cur_data":"9edf71aa6a5f","attrs":{"9edf71aa6a5f":{"x":{},"y":{},"z":{},"mode":"markers","color":{},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter3d"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"scene":{"xaxis":{"title":"PC1 (0.44)"},"yaxis":{"title":"PC2 (0.24)"},"zaxis":{"title":"PC3 (0.18)"}},"hovermode":"closest","showlegend":true},"source":"A","config":{"showSendToCloud":false},"data":[{"x":[0.822306348064632,1.07190906297059,-0.147141037458331,0.199294321369512,-0.5486819703151,0.514633853192868,0.713532673229052,1.37152976013352,0.52640377274337,0.267361548571376,0.944054171291118,0.231128778424715],"y":[0.445263093303644,0.187234431605288,0.755372173672134,-0.023831098779958,0.493399345359134,-0.576278812636121,0.69547339300874,-1.80817244966095,-0.493796508091662,0.952726130821671,-0.793837447599091,0.00443657492663399],"z":[-0.880936600577315,-0.0176822707947886,0.660594401635903,-0.501516275747051,0.687434704339677,-1.0688829549961,0.455617103016485,-1.75352538943136,-0.99390360205101,1.14931647247675,-1.24707169997073,-0.97388216592004],"mode":"markers","type":"scatter3d","name":"Midwest","marker":{"color":"rgba(102,194,165,1)","line":{"color":"rgba(102,194,165,1)"}},"textfont":{"color":"rgba(102,194,165,1)"},"error_y":{"color":"rgba(102,194,165,1)"},"error_x":{"color":"rgba(102,194,165,1)"},"line":{"color":"rgba(102,194,165,1)"},"frame":null},{"x":[-0.47822233006605,-0.664721550664497,-0.110640822935078,-0.818694302541133,-2.87978600311518,-2.51086753433792,0.744821107412191,0.334619938495907,1.22504178768941,0.552040137818934,-2.66923993620963],"y":[-0.412077651900541,1.44721664016657,-0.549686882245433,0.295456128203461,2.256782135688,0.915242873299899,-0.134875414259115,-0.0326198407507055,0.485101333969798,0.637158564961516,0.932670344671229],"z":[-1.61515979102661,-1.07851228349137,-1.81410104491278,0.128354444299685,-0.625537096908529,-1.15961820470845,-0.933292390651044,-0.144887248941461,0.252609340024118,-1.60339094145845,-0.787533889935342],"mode":"markers","type":"scatter3d","name":"Northeast","marker":{"color":"rgba(252,141,98,1)","line":{"color":"rgba(252,141,98,1)"}},"textfont":{"color":"rgba(252,141,98,1)"},"error_y":{"color":"rgba(252,141,98,1)"},"error_x":{"color":"rgba(252,141,98,1)"},"line":{"color":"rgba(252,141,98,1)"},"frame":null},{"x":[2.94216287467319,1.94743472870561,-1.03793615459785,1.13682464550325,1.88563997508177,2.66113290298741,2.77536371638002,0.844917543663161,1.2269703929894,2.1436573366832,-0.184957946854164,-0.229940207158274],"y":[-0.0752557943122514,1.05577150697445,-0.598168804619145,0.22413553987748,2.73995454203208,1.15384861898201,1.30703210104687,0.261123615247009,0.102537708857827,0.613716038538981,-0.373052886393018,2.35693596974787],"z":[0.666655165781602,0.191884751196139,1.8314226947022,0.798259695892016,-0.375985124631002,-0.458193452198609,0.263255998415282,1.41760066037626,0.670218397936242,0.979075178367292,1.09151752134985,0.89039417688404],"mode":"markers","type":"scatter3d","name":"Southeast","marker":{"color":"rgba(141,160,203,1)","line":{"color":"rgba(141,160,203,1)"}},"textfont":{"color":"rgba(141,160,203,1)"},"error_y":{"color":"rgba(141,160,203,1)"},"error_x":{"color":"rgba(141,160,203,1)"},"line":{"color":"rgba(141,160,203,1)"},"frame":null},{"x":[-2.11131140307473,-0.77240247364298,2.02770365941909,1.62545414928106],"y":[-1.29076477750668,-2.22836665316224,0.350305139464718,-1.72861031213258],"z":[0.866597831676071,0.162891600506687,0.019459868729898,2.9202965961821],"mode":"markers","type":"scatter3d","name":"Southwest","marker":{"color":"rgba(231,138,195,1)","line":{"color":"rgba(231,138,195,1)"}},"textfont":{"color":"rgba(231,138,195,1)"},"error_y":{"color":"rgba(231,138,195,1)"},"error_x":{"color":"rgba(231,138,195,1)"},"line":{"color":"rgba(231,138,195,1)"},"frame":null},{"x":[-2.29319772221018,-0.528766334892917,-2.33468913286766,-2.08356305271039,-0.350059644500599,-1.84031336754883,-2.44464391177211,-2.48042648733445,2.62393333417113,-2.03618441140133,-1.80348478273613],"y":[0.592759393789722,-1.62733269142585,-1.36167153236652,-1.52225493577275,-0.871574691313242,-0.0217521523986969,-0.375858926629271,0.346329375583748,-4.18092893143258,0.414596230007585,-0.941809748419655],"z":[0.256445374239515,2.35927179463706,0.280545018368283,-0.433248944726638,-0.655316679849994,-0.304095670007428,0.722945673710484,0.713693792291879,-1.274701741879,0.1869624137359,0.077654794043675],"mode":"markers","type":"scatter3d","name":"West","marker":{"color":"rgba(166,216,84,1)","line":{"color":"rgba(166,216,84,1)"}},"textfont":{"color":"rgba(166,216,84,1)"},"error_y":{"color":"rgba(166,216,84,1)"},"error_x":{"color":"rgba(166,216,84,1)"},"line":{"color":"rgba(166,216,84,1)"},"frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<p>This is the first of three plot pairs. I am showing a biplot and 3D scatterplot of the scaled data (colored by Region).</p>
+<p>From the biplot, we can ascertain that PC1 is positively related to every numeric variable in the dataset. PC2 is strongly positively associated with mortality and incidence rates but is somewhat negatively related to rates_of_adherence and total number of congregations.</p>
+<p>I included the 3D scatterplot to help understand the data. While two principal components are sufficient to glean ~70% of the data’s variation, the addition of a third principal component yields about ~87% of the variation.</p>
+<p>As for the distribution of the points by Region, some regions are very well defined in the feature space. The West and Southeast, for instance, are well separated from the other points; Midwest, Northeast, and Southwest are less well-defined.</p>
+</div>
+<div id="b.-validate-optimal-k-for-kmeans" class="section level2">
+<h2>5b. Validate Optimal K for Kmeans</h2>
+<pre class="r"><code>max_k = 11
+wss&lt;-vector() 
+sil_width&lt;-vector() 
+for(i in 2:max_k){
+temp&lt;- data %&gt;% select_if(is.numeric) %&gt;% scale %&gt;% kmeans(i)
+wss[i]&lt;-temp$tot.withinss
+sil &lt;- silhouette(temp$cluster,dist(data))
+sil_width[i]&lt;-mean(sil[,3]) 
+}
+
+ggplot()+geom_point(aes(x=1:max_k,y=wss))+geom_path(aes(x=1:max_k,y=wss))+
+  xlab(&quot;clusters&quot;)+scale_x_continuous(breaks=1:max_k) + xlim(2,max_k) + xlim(2,max_k) + xlab(&quot;K&quot;) + ylab(&quot;WSS&quot;) + theme_minimal() + ggtitle(&quot;WSS Silhouette Width by K&quot;)</code></pre>
+<pre><code>## Scale for &#39;x&#39; is already present. Adding another scale for &#39;x&#39;, which will
+## replace the existing scale.
+## Scale for &#39;x&#39; is already present. Adding another scale for &#39;x&#39;, which will
+## replace the existing scale.</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<pre class="r"><code>ggplot()+geom_line(aes(x=1:max_k,y=sil_width))+scale_x_continuous(name=&quot;k&quot;,breaks=1:max_k)+ xlim(2,max_k) + xlab(&quot;K&quot;) + ylab(&quot;Mean Silhouette Width&quot;) + theme_minimal() + ggtitle(&quot;Mean Silhouette Width by K&quot;)</code></pre>
+<pre><code>## Scale for &#39;x&#39; is already present. Adding another scale for &#39;x&#39;, which will
+## replace the existing scale.</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-16-2.png" width="672" /></p>
+<p>Based on the average silhouette width plot and the WSS plot, the optimal value of K is 2. This value of K corresponds to an average silhouette width of ~0.11 and a WSS of ~200.</p>
+</div>
+<div id="b.-assess-cluster-goodness-with-mesa-themed-silhouette-plot" class="section level2">
+<h2>5b. Assess Cluster “Goodness” with (Mesa-themed) Silhouette Plot</h2>
+<pre class="r"><code>km &lt;- data %&gt;% select_if(is.numeric) %&gt;%scale %&gt;% kmeans(2)
+ss &lt;- silhouette(km$cluster, dist(data%&gt;% select_if(is.numeric)))
+plot(ss,col = c(&#39;#E53D57&#39;, &quot;#E68E0C&quot;), border = NA, main = &quot;Silhouette Plot of Kmeans Clusters&quot;)</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+<p>As expected, the clusters look absolutely wretched. Average silhouette width is 0.11.</p>
+</div>
+<div id="b.-visualizing-kmeans-clusters-in-feature-space-with-principal-components" class="section level2">
+<h2>5b. Visualizing Kmeans Clusters In Feature Space (with Principal Components)</h2>
+<pre class="r"><code>data_pca_df_km &lt;- data_pca_df %&gt;% mutate(cluster=as.factor(km$cluster))
+fviz_pca_biplot(data_pca, habillage = data_pca_df_km$cluster,label =&quot;var&quot;) + theme_minimal()</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<pre class="r"><code>data_pca_df_km %&gt;% plot_ly(x=~PC1, y=~PC2, z=~PC3, type=&quot;scatter3d&quot;, mode=&quot;markers&quot;, color = ~cluster) %&gt;% layout(scene = list(xaxis = list(title = &#39;PC1 (0.44)&#39;), yaxis = list(title = &#39;PC2 (0.24)&#39;), zaxis = list(title = &#39;PC3 (0.18)&#39;)))</code></pre>
+<div id="htmlwidget-3" style="width:672px;height:480px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-3">{"x":{"visdat":{"9edf123ee591":["function () ","plotlyVisDat"]},"cur_data":"9edf123ee591","attrs":{"9edf123ee591":{"x":{},"y":{},"z":{},"mode":"markers","color":{},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter3d"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"scene":{"xaxis":{"title":"PC1 (0.44)"},"yaxis":{"title":"PC2 (0.24)"},"zaxis":{"title":"PC3 (0.18)"}},"hovermode":"closest","showlegend":true},"source":"A","config":{"showSendToCloud":false},"data":[{"x":[-2.29319772221018,-2.11131140307473,-0.528766334892917,-2.33468913286766,-1.03793615459785,-2.08356305271039,-0.350059644500599,-0.818694302541133,-2.87978600311518,-0.5486819703151,-1.84031336754883,-2.51086753433792,-0.77240247364298,-2.44464391177211,-2.48042648733445,-0.184957946854164,-2.66923993620963,-2.03618441140133,-1.80348478273613],"y":[0.592759393789722,-1.29076477750668,-1.62733269142585,-1.36167153236652,-0.598168804619145,-1.52225493577275,-0.871574691313242,0.295456128203461,2.256782135688,0.493399345359134,-0.0217521523986969,0.915242873299899,-2.22836665316224,-0.375858926629271,0.346329375583748,-0.373052886393018,0.932670344671229,0.414596230007585,-0.941809748419655],"z":[0.256445374239515,0.866597831676071,2.35927179463706,0.280545018368283,1.8314226947022,-0.433248944726638,-0.655316679849994,0.128354444299685,-0.625537096908529,0.687434704339677,-0.304095670007428,-1.15961820470845,0.162891600506687,0.722945673710484,0.713693792291879,1.09151752134985,-0.787533889935342,0.1869624137359,0.077654794043675],"mode":"markers","type":"scatter3d","name":"1","marker":{"color":"rgba(102,194,165,1)","line":{"color":"rgba(102,194,165,1)"}},"textfont":{"color":"rgba(102,194,165,1)"},"error_y":{"color":"rgba(102,194,165,1)"},"error_x":{"color":"rgba(102,194,165,1)"},"line":{"color":"rgba(102,194,165,1)"},"frame":null},{"x":[2.94216287467319,1.94743472870561,-0.47822233006605,-0.664721550664497,1.13682464550325,0.822306348064632,1.07190906297059,-0.147141037458331,0.199294321369512,1.88563997508177,2.66113290298741,-0.110640822935078,0.514633853192868,0.713532673229052,2.77536371638002,0.844917543663161,1.37152976013352,0.52640377274337,0.744821107412191,0.334619938495907,0.267361548571376,2.02770365941909,1.22504178768941,0.552040137818934,1.2269703929894,0.944054171291118,2.1436573366832,1.62545414928106,2.62393333417113,0.231128778424715,-0.229940207158274],"y":[-0.0752557943122514,1.05577150697445,-0.412077651900541,1.44721664016657,0.22413553987748,0.445263093303644,0.187234431605288,0.755372173672134,-0.023831098779958,2.73995454203208,1.15384861898201,-0.549686882245433,-0.576278812636121,0.69547339300874,1.30703210104687,0.261123615247009,-1.80817244966095,-0.493796508091662,-0.134875414259115,-0.0326198407507055,0.952726130821671,0.350305139464718,0.485101333969798,0.637158564961516,0.102537708857827,-0.793837447599091,0.613716038538981,-1.72861031213258,-4.18092893143258,0.00443657492663399,2.35693596974787],"z":[0.666655165781602,0.191884751196139,-1.61515979102661,-1.07851228349137,0.798259695892016,-0.880936600577315,-0.0176822707947886,0.660594401635903,-0.501516275747051,-0.375985124631002,-0.458193452198609,-1.81410104491278,-1.0688829549961,0.455617103016485,0.263255998415282,1.41760066037626,-1.75352538943136,-0.99390360205101,-0.933292390651044,-0.144887248941461,1.14931647247675,0.019459868729898,0.252609340024118,-1.60339094145845,0.670218397936242,-1.24707169997073,0.979075178367292,2.9202965961821,-1.274701741879,-0.97388216592004,0.89039417688404],"mode":"markers","type":"scatter3d","name":"2","marker":{"color":"rgba(141,160,203,1)","line":{"color":"rgba(141,160,203,1)"}},"textfont":{"color":"rgba(141,160,203,1)"},"error_y":{"color":"rgba(141,160,203,1)"},"error_x":{"color":"rgba(141,160,203,1)"},"line":{"color":"rgba(141,160,203,1)"},"frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<p>These are the same plots as previously shown; however, marker colors were changed to represent clusters defined by Kmeans. Clusters are somewhat prominent; Cluster 1 is high on PC1, Cluster 2 is low on PC1.</p>
+</div>
+<div id="c.-validate-optimal-k-for-pam" class="section level2">
+<h2>5c. Validate Optimal K for PAM</h2>
+<pre class="r"><code>max_k = 10
+pam_dat&lt;-data %&gt;% select_if(is.numeric) %&gt;% scale
+sil_width&lt;-vector()
+for(i in 2:max_k){  
+  pam_fit &lt;- pam(pam_dat, k = i)  
+  sil_width[i] &lt;- pam_fit$silinfo$avg.width  
+}
+ggplot()+geom_line(aes(x=1:max_k,y=sil_width))+scale_x_continuous(name=&quot;k&quot;,breaks=1:max_k) + xlim(2,max_k) + xlab(&quot;K&quot;) + ylab(&quot;Mean Silhouette Width&quot;) + theme_minimal() + ggtitle(&quot;Mean Silhouette Width by K&quot;)</code></pre>
+<pre><code>## Scale for &#39;x&#39; is already present. Adding another scale for &#39;x&#39;, which will
+## replace the existing scale.</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<p>Even though k=6 has a higher silhouette score than k=4, I choose to set k=4. This is one of those interpretability-tightness tradeoffs.</p>
+</div>
+<div id="c.-assess-pam-cluster-goodness-with-another-mesa-themed-silhouette-plot" class="section level2">
+<h2>5c. Assess PAM Cluster “Goodness” with another (Mesa-themed) Silhouette Plot</h2>
+<pre class="r"><code>gower1 &lt;-daisy(data %&gt;% select(-X1) %&gt;% mutate_if(is.character,as.factor) %&gt;% select_if(is.numeric) %&gt;% scale,metric=&quot;gower&quot;) 
+pam_fit &lt;- pam(gower1,k = 4,diss =T)
+
+plot(silhouette(pam_fit$clustering,gower1), col = c(&#39;#E53D57&#39;,&quot;#D9563A&quot;, &quot;#E68E0C&quot;, &quot;#89669D&quot;), border = NA,main =&quot;Silhouette Plot of PAM Clusters&quot;)</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<p>It’s clear that with PAM, my data clusters a little more cleanly. The clusters still aren’t great (as seen by the very small 0.26 mean silhouette width). Cluster two is fairly tight, and cluster four is somewhat diffuse. Each cluster has one or two samples that don’t belong.</p>
+</div>
+<div id="c.-visualizing-kmeans-clusters-in-feature-space-with-principal-components" class="section level2">
+<h2>5c. Visualizing Kmeans Clusters In Feature Space (with Principal Components)</h2>
+<pre class="r"><code>data_pca_df_pam &lt;- data_pca_df %&gt;% mutate(cluster=as.factor(pam_fit$clustering))
+fviz_pca_biplot(data_pca, habillage = data_pca_df_pam$cluster, label =&quot;var&quot;)</code></pre>
+<p><img src="/projects/Project1/Bindex_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
+<pre class="r"><code>data_pca_df_pam %&gt;% plot_ly(x=~PC1, y=~PC2, z=~PC3, type=&quot;scatter3d&quot;, mode=&quot;markers&quot;, color = ~cluster) %&gt;% layout(scene = list(xaxis = list(title = &#39;PC1 (0.44)&#39;), yaxis = list(title = &#39;PC2 (0.24)&#39;), zaxis = list(title = &#39;PC3 (0.18)&#39;)))</code></pre>
+<div id="htmlwidget-4" style="width:672px;height:480px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-4">{"x":{"visdat":{"9edf22f7c47c":["function () ","plotlyVisDat"]},"cur_data":"9edf22f7c47c","attrs":{"9edf22f7c47c":{"x":{},"y":{},"z":{},"mode":"markers","color":{},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter3d"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"scene":{"xaxis":{"title":"PC1 (0.44)"},"yaxis":{"title":"PC2 (0.24)"},"zaxis":{"title":"PC3 (0.18)"}},"hovermode":"closest","showlegend":true},"source":"A","config":{"showSendToCloud":false},"data":[{"x":[-2.29319772221018,-2.11131140307473,-2.33468913286766,-2.08356305271039,-2.87978600311518,-1.84031336754883,-2.51086753433792,-0.77240247364298,-2.44464391177211,-2.48042648733445,-2.66923993620963,-2.03618441140133,-1.80348478273613],"y":[0.592759393789722,-1.29076477750668,-1.36167153236652,-1.52225493577275,2.256782135688,-0.0217521523986969,0.915242873299899,-2.22836665316224,-0.375858926629271,0.346329375583748,0.932670344671229,0.414596230007585,-0.941809748419655],"z":[0.256445374239515,0.866597831676071,0.280545018368283,-0.433248944726638,-0.625537096908529,-0.304095670007428,-1.15961820470845,0.162891600506687,0.722945673710484,0.713693792291879,-0.787533889935342,0.1869624137359,0.077654794043675],"mode":"markers","type":"scatter3d","name":"1","marker":{"color":"rgba(102,194,165,1)","line":{"color":"rgba(102,194,165,1)"}},"textfont":{"color":"rgba(102,194,165,1)"},"error_y":{"color":"rgba(102,194,165,1)"},"error_x":{"color":"rgba(102,194,165,1)"},"line":{"color":"rgba(102,194,165,1)"},"frame":null},{"x":[2.94216287467319,1.94743472870561,1.13682464550325,1.88563997508177,2.66113290298741,2.77536371638002,2.02770365941909,1.2269703929894,2.1436573366832,-0.229940207158274],"y":[-0.0752557943122514,1.05577150697445,0.22413553987748,2.73995454203208,1.15384861898201,1.30703210104687,0.350305139464718,0.102537708857827,0.613716038538981,2.35693596974787],"z":[0.666655165781602,0.191884751196139,0.798259695892016,-0.375985124631002,-0.458193452198609,0.263255998415282,0.019459868729898,0.670218397936242,0.979075178367292,0.89039417688404],"mode":"markers","type":"scatter3d","name":"2","marker":{"color":"rgba(252,141,98,1)","line":{"color":"rgba(252,141,98,1)"}},"textfont":{"color":"rgba(252,141,98,1)"},"error_y":{"color":"rgba(252,141,98,1)"},"error_x":{"color":"rgba(252,141,98,1)"},"line":{"color":"rgba(252,141,98,1)"},"frame":null},{"x":[-0.528766334892917,-0.664721550664497,-1.03793615459785,-0.147141037458331,-0.818694302541133,-0.5486819703151,0.713532673229052,0.844917543663161,0.267361548571376,-0.184957946854164],"y":[-1.62733269142585,1.44721664016657,-0.598168804619145,0.755372173672134,0.295456128203461,0.493399345359134,0.69547339300874,0.261123615247009,0.952726130821671,-0.373052886393018],"z":[2.35927179463706,-1.07851228349137,1.8314226947022,0.660594401635903,0.128354444299685,0.687434704339677,0.455617103016485,1.41760066037626,1.14931647247675,1.09151752134985],"mode":"markers","type":"scatter3d","name":"3","marker":{"color":"rgba(141,160,203,1)","line":{"color":"rgba(141,160,203,1)"}},"textfont":{"color":"rgba(141,160,203,1)"},"error_y":{"color":"rgba(141,160,203,1)"},"error_x":{"color":"rgba(141,160,203,1)"},"line":{"color":"rgba(141,160,203,1)"},"frame":null},{"x":[-0.47822233006605,0.822306348064632,-0.350059644500599,1.07190906297059,0.199294321369512,-0.110640822935078,0.514633853192868,1.37152976013352,0.52640377274337,0.744821107412191,0.334619938495907,1.22504178768941,0.552040137818934,0.944054171291118,1.62545414928106,2.62393333417113,0.231128778424715],"y":[-0.412077651900541,0.445263093303644,-0.871574691313242,0.187234431605288,-0.023831098779958,-0.549686882245433,-0.576278812636121,-1.80817244966095,-0.493796508091662,-0.134875414259115,-0.0326198407507055,0.485101333969798,0.637158564961516,-0.793837447599091,-1.72861031213258,-4.18092893143258,0.00443657492663399],"z":[-1.61515979102661,-0.880936600577315,-0.655316679849994,-0.0176822707947886,-0.501516275747051,-1.81410104491278,-1.0688829549961,-1.75352538943136,-0.99390360205101,-0.933292390651044,-0.144887248941461,0.252609340024118,-1.60339094145845,-1.24707169997073,2.9202965961821,-1.274701741879,-0.97388216592004],"mode":"markers","type":"scatter3d","name":"4","marker":{"color":"rgba(231,138,195,1)","line":{"color":"rgba(231,138,195,1)"}},"textfont":{"color":"rgba(231,138,195,1)"},"error_y":{"color":"rgba(231,138,195,1)"},"error_x":{"color":"rgba(231,138,195,1)"},"line":{"color":"rgba(231,138,195,1)"},"frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<p>These principal components are the same as in the previous plot. The only element changed is the marker color, which now represents clusters determined via PAM.</p>
+<p>Cluster 1 is very low on PC1 and nearly 0 on PC2. Cluster 2 is very high on PC1 and almost 0 on PC2. It is impossible to differentiate clusters 3 and 4 using only two principal components. These each score near 0 on PC1 and PC2, but Cluster 3 scores slightly positive on PC3 while Cluster 4 scores slightly negative on PC3.</p>
+</div>
+</div>

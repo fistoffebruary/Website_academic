@@ -1,0 +1,570 @@
+---
+title: "Fitting Models on High Dimensional Biological Data (in R)"
+author: "Ryan Bailey"
+date: '2020-11-26'
+thumbnail: "featured.jpg"
+image:
+  caption: 'Photo by Pietro Jeng on Unsplash'
+  placement: 3
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+---
+
+```{r global_options, include=FALSE}
+#DO NOT EDIT THIS CHUNK OR ANYTHING ABOVE IT!
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F, tidy=T, tidy.opts=list(width.cutoff=50), R.options=list(max.print=100,dplyr.print_max=100))
+```
+
+## REB3566
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Welcome to for loop h*ll
+
+# 0a. Introduction
+This analysis is based on The Cancer Genome Atlas' Pancreatic Adenocarcinoma Project (TCGA-PAAD). TCGA provides large, well-documented cancer datasets that are semi open-source. Three datasets, HT-Seq FPKM, survival data, and phenotype data, were acquired from UCSC Xena, a data download portal from UC Santa Cruz [UCSC Xena](https://xenabrowser.net/datapages/?cohort=GDC%20TCGA%20Pancreatic%20Cancer%20(PAAD)&removeHub=https%3A%2F%2Fxena.treehouse.gi.ucsc.edu%3A443). There are 182 complete cases for these datasets. The HT-Seq dataset has 60,483 variables, all of which are numeric. These are measured in *log2(fpkm+1) or log2(Fragments Per Kilobase of transcript per Million mapped reads + 1)*. In RNA-Seq, the relative expression of a transcript is proportional to the number of cDNA fragments that originate from it. The survival data contains two variables, days_survived (OS.time) and OS (Overall Survival), where **1** is a survival event (death), and **0** is no survival event. The phenotype data contains 122 variables encompassing treatment information, tumor grading/staging, patient health behaviors, and demographic information.
+
+One of the key categorical variables that I come back to frequently is **organ of origin.** When I binarize this variable, I encode **Head of Pancreas** as **1** and all other locations as **0.** [For context, pancreatic cancers that originate in the head of the pancreas often have better prognoses than those that arise in other areas.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2575681/)
+
+
+
+*Note: I plan on doing inline comments on my code, but will also narrate my results, interpretations, and thought processes after each code chunk.*
+
+
+
+# 0b. Importing Libraries
+##```{{r Importing Packages,echo=T,warning=F, message=F,results='hide'}
+
+# for reading in my datasets
+library(readr)
+
+# for data wrangling, cleaning, etc.
+library(tidyverse)
+
+#plotting
+library(ggplot2)
+
+# Heteroscedasticity-Consistent Covariance Matrix Estimation
+library(sandwich)
+
+# test for heteroskedasticity 
+library(lmtest)
+
+# ROC plots
+library(plotROC)
+
+#LASSO
+library(glmnet)
+
+
+# Things to build a hierarchically clustered heatmap
+library(prettyR); library(reshape2);library(ComplexHeatmap);library(circlize)
+
+# for PCA Biplot
+library(factoextra)
+
+# for plotting interactions
+library(interactions)
+
+# manova assumptions
+library(rstatix)
+##```{
+
+
+
+# 0c. Read in Phenotype Data
+##```{{r Read in Pheno,echo=T,warning=F, message=F,results='hide'}
+# pheno comes in a tab-separated values format
+pheno <- read_delim("TCGA-PAAD.GDC_phenotype.tsv",
+    "\t", escape_double = FALSE, trim_ws = TRUE)
+
+# figure out how many distinct values each column has
+x <- (pheno %>% summarize_all(n_distinct) %>% as.vector %>% as.numeric)
+
+# figure out how many NAs are in each column
+y <- (pheno %>% summarize_all(funs(sum(is.na(.)))) %>% as.vector %>% as.numeric)
+
+# create a dataframe with column indices, the number of unique values, and the number of NAs; extract columns with greater than 1 and fewer than 7 unique values and fewer than 10 NAs; pull indices
+w <- data.frame(w = 1:ncol(pheno),x = x, y = y) %>% filter(x < 7, x > 1,y <10) %>% pull(w)
+
+# select only these variables and overwrite pheno
+pheno <- pheno %>% select(submitter_id.samples,w)
+##```{
+
+The first thing I need to do is filter out the not-useful variables in this vast dataset. As per the rubric specifications, categorical variables should have no more than seven unique values and, obviously, they need to have more than one unique value. Variables with a ton of NAs aren't useful either and will wreck my dataset if I drop NAs. I select only categorical variables with less than 10 NAs and between 2 and 7 (inclusive) unique values.
+
+
+# 0d. Read in Survival Data
+##```{{r Read in Survival,echo=T,warning=F, message=F,results='hide'}
+surv <- read_delim("TCGA-PAAD.survival.tsv",
+    "\t", escape_double = FALSE, trim_ws = TRUE)
+
+##```{
+
+The survival data has one numeric and one factor. It doesn't need any cleaning, so I only need to import it.
+
+
+# 0e. Read in Expression Data
+##```{{r Read in Expr,echo=T,warning=F, message=F,results='hide'}
+# import the same as every other dataset
+expr <- read_delim("TCGA-PAAD.htseq_fpkm.tsv",
+    "\t", escape_double = FALSE, trim_ws = TRUE)
+
+# transpose the dataset; if there is a cleaner way to do this to data.frame objects, I'd love to hear it
+expr <- expr %>% column_to_rownames('Ensembl_ID') %>% as.matrix %>% t %>% data.frame
+
+# get the variance for each gene in the dataset
+col_vars <- sapply(expr, var)
+
+# extract only genes with variance in the 99.9th percentile
+# this leaves us with 60483/ 100 = 61 most variable genes; drop genes with NAs
+thresh <- col_vars  %>% quantile(.999)
+expr <- expr[col_vars > thresh] %>% na.omit()
+##```{
+
+
+Processing the expression data is a little more involved. Luckily the data is not entirely raw. It has been normalized to the FPKM scale and transformed with a log2(FPKM+1) transformation. Still, I'd rather not work with 60,483 variables. Here, my code organizes the genes by their variance(
+$\sigma^{2} = \frac{\sum\limits_{i=1}^{n} \left(x_{i} - \bar{x}\right)^{2}} {n-1}$) and extracts the top 99.9th percentile genes. These genes will vary quite a bit between samples and thus have a greater likelihood of being informative.
+
+
+# 0f. Make a clustered, heatmap of the data. (Just for fun)
+##```{{r Clustered Heatmap,echo=T,warning=F, message=F}
+# color code the values in the heatmap (green = -2, black = 0, red = 2)
+col_fun = colorRamp2(c(-2, 0, 2), c("green", "black", "red"))
+
+# heatmaps get pretty crazy if you don't scale the data
+
+# extract only the numeric variables, transpose dataset so genes run horizontally and samples run vertically
+Heatmap(expr %>% select_if(is.numeric) %>%scale %>% as.matrix %>% t,
+        name = "Correlation Matrix of Numeric Variables", #title of legend
+        column_title = "", row_title = "",
+        row_names_gp = gpar(fontsize = 1),
+        column_names_gp = gpar(fontsize = 1),
+        col = col_fun) # Text size for row names
+##```{
+
+This heatmap is outside the scope of the project, but I always find it useful in understanding my data (especially when I'm working with microarray-type datasets).
+
+# 0g. Join all the datasets together
+##```{{r Join Datasets,message=FALSE}
+# just a bunch of left joins
+#dummy encode tissue_or_organ_of_origin.diagnoses such that Head of Pancreas equals 1 and other sites equal 0
+data <- expr %>% rownames_to_column("sample") %>%
+    left_join(pheno, by = c('sample' = "submitter_id.samples")) %>%
+    left_join(surv) %>%
+    mutate(Head_of_pancreas = as.factor(ifelse(tissue_or_organ_of_origin.diagnoses == "Head of pancreas",1,0)))
+##```{
+
+Joining all the datasets into a single dataframe; dummy encode tissue_or_organ_of_origin.diagnoses such that Head of Pancreas equals 1 and other sites equal 0
+
+
+# 0h. PCA
+##```{{r PCA, message=FALSE}
+set.seed(1)
+
+data_pca <-data %>% select(contains("ENSG")) %>% scale %>% princomp
+data_pca_df<- data.frame(PC1=data_pca$scores[, 1], PC2=data_pca$scores[, 2], PC3 = data_pca$scores[, 3], HoP = as.factor(data$Head_of_pancreas))
+
+ggplot(data_pca_df,aes(PC1,PC2, color = HoP)) + 
+  geom_point() + 
+  theme_minimal() + 
+  geom_point(data = data_pca_df %>% group_by(HoP) %>% summarize(x = mean(PC2),y = mean(PC2)),aes(x,y), size = 6,shape = 3) + 
+  ggtitle("PCA of Data Colored By Head of Pancreas")
+##```{
+
+It became instantly obvious to me that MANOVA and all of the hypothesis tests for its assumptions break down with high dimensional data. I'm not sure why this is. Rather than hand picking or randomly picking a subset of variables, I perform PCA on the data and work with principal components instead.
+
+# 1a. Assessing MANOVA Assumptions
+##```{{r 1a MANOVA Assumptions,message=FALSE}
+group <- as.character(data_pca_df$HoP)
+DVs <- data_pca_df %>% select(PC1,PC2,PC3)
+
+#Test multivariate normality for each group (null: assumption met)
+sapply(split(DVs,group), mshapiro_test)
+
+#If any p<.05, stop (assumption violated). If not, test homogeneity of covariance matrices
+
+#Box's M test (null: assumption met)
+
+# box_m(DVs, group)
+
+##```{
+
+Welp, it appears I violate some of the assumptions of the MANOVA, but that's no surprise. The samples are not likely to be fully random. PCA1, PC2, and PC3 are neither univariately normal nor multivariately normal. There is not a strong linear relationship between PC1, PC2, PC3 There are several groups of outliers for the variables.
+
+Box's test was not performed because the data did not meet the multivariate normality assumption.
+
+
+# 1b. MANOVA: Head of Pancreas and Principal Components
+##```{{r 1b MANOVA,warning=FALSE,message=FALSE}
+
+man <- manova(cbind(PC1,PC2,PC3)~HoP,data = data_pca_df)
+summary(man,tol=0)
+summary.aov(man)
+
+pairwise.t.test((data_pca_df$PC1), data_pca_df$HoP, p.adj = "none")
+pairwise.t.test((data_pca_df$PC2), data_pca_df$HoP, p.adj = "none")
+pairwise.t.test((data_pca_df$PC3), data_pca_df$HoP, p.adj = "none")
+
+bonf_p <- 0.05 / 7
+bonf_p
+prob_typeI <- 1 - (0.95 ^ 7)
+prob_typeI
+##```{
+
+Significant differences were found between head of pancreas samples and non-head of pancreas samples. After performing 7 hypothesis tests, the probablility of a Type I error was 0.3016627. The bonferroni-corrected p-value is 0.007142857. While all hypothesis tests returned p-values less than 0.05. Only the MANOVA, PC1 ANOVA, and the PC1 pairwise t-test returned p-values less than the bonf_p. This means that only head of pancreas and non-head of pancreas only significantly different for principal component 1. 
+
+
+# 2a. Randomization Tests: Mean Difference in PC Values in HoP = 1 vs HoP = 0
+##```{{r 2. Randomization Test,message=FALSE}
+# set the seed
+set.seed(1)
+
+
+# randomization_test takes a data.frame, a column name ("string"), and an optional iters argument
+# it returns a histogram of bootstrapped mean distances.
+
+randomization_test <- function(data, column, iters = 5000){
+  rand_dist <- c()
+  new <- data %>% select(column,HoP)
+  for (i in 1:iters){
+  temp <- new[sample(1:nrow(new),size = 10, replace = T),] %>%
+        group_by(HoP) %>%
+        summarize_if(is.numeric,mean)
+  if (nrow(temp) == 1){rand_dist[i] <- temp%>% pull(column)}
+  if (nrow(temp) == 2){rand_dist[i] <- temp %>% summarize_if(is.numeric,diff) %>% pull(column)}}
+   # get the lower and upper bounds of all the mean_dists for that gene
+  lb <- quantile(rand_dist,0.025)
+  ub <- quantile(rand_dist,0.975)
+  
+  
+    data.frame(means=rand_dist) %>%
+              ggplot(aes(x = means)) +
+              geom_histogram(alpha = 0.75,fill = "gray") +
+              theme_minimal() +
+              geom_vline(xintercept = mean(rand_dist),color = "red")+
+              geom_vline(xintercept = lb,color = "green")+
+              geom_vline(xintercept = ub,color = "green")+
+              ggtitle(paste(i,"Bootstrapped Mean Differences Between HoP = 1 vs HoP = 0 for",column))+
+              xlab("Differences in Means")
+}
+
+
+
+##```{
+
+##```{{r Run Randomization Tests, echo = FALSE,message=FALSE}
+randomization_test(data_pca_df,"PC1",2500)
+randomization_test(data_pca_df,"PC2",2500)
+randomization_test(data_pca_df,"PC3",2500)
+##```{
+
+The null hypothesis for each of the three hypothesis tests is that the HoP = 1 group and HoP = 0 group do not differ in their means.
+
+The alternative hypothesis for each of the three hypothesis tests is that the HoP = 1 group and HoP = 0 group do differ in their means.
+
+For context, the red line in each histogram is the mean, and the green lines are the 95 CI. It's pretty clear to me that in each of the three plots, the 95 CI encompasses 0.
+
+The mean distributions between Head of pancreas (HoP = 1) and non-Head of pancreas (HoP = 0) samples was not significantly different for PC1, PC2, or PC3. This is because for each variable, the 95 CIs of mean differences encompass 0. I cannot reject the null hypothesis for any of these variables.
+
+
+
+# 3a. LM: Predicting Survival Time from Principal Components
+##```{{r LM PCs,message=FALSE}
+# create mean centered principal component variables; rename OS.time to `y`
+data_pca_df <- data_pca_df %>% mutate(PC1_c = PC1 - mean(PC1),PC2_c = PC2 - mean(PC2)) %>% mutate(y = data$OS.time)
+
+
+fit <- lm(y~PC1_c*PC2_c,data = data_pca_df)
+
+# check normality
+qqnorm(fit$residuals, main = "QQ-plot of Model Residuals")
+qqline(fit$residuals, col = "red")
+
+# check for uniform variance; check linearity
+res <- data.frame(fitted.values =fit$fitted.values, residuals = fit$residuals)
+res %>% ggplot(aes(fitted.values, residuals))+
+  geom_smooth(color = 'black',se=T) + 
+  geom_point() + 
+  geom_hline(aes(yintercept =0),color = 'red') + 
+  theme_minimal() + 
+  ggtitle("Plotting Residuals by Fitted Values")
+
+# hypothesis test for uniform variance
+bptest(fit)
+
+# model summary
+summary(fit)
+# robust SEs model summary
+coeftest(fit, vcov = vcovHC(fit))
+# interaction plot for PC1_c, PC2_c
+interact_plot(fit, pred = PC1_c, modx = PC2_c,data = data_pca_df)
+
+
+
+
+##```{
+
+**OS.time =564.67 - 6.185(PC1_c) - 31.236(PC2_c) + 4.184(PC1_c * PC2_c)** 
+
+It's clear from the QQ plot that my data is not normal at all. That said, the BP Test and even distribution of residuals around 0 prove show that the data is homoskedastic and exhibits a linear trend.
+
+For samples of average PC1 and PC2, the predicted overall survival time is 564.67 days. PC1_c has a coefficient of -6.185. This means that for every one-unit increase in PC1_c, OS.time decreases by 6.185, on average. (not significant) PC2_c has a coefficient of -31.236. This means that for every one-unit increase in PC2_c, OS.time decreases by 31.236, on average. (significant) The coefficent for PC1_c:PC2_c is 4.184. This shows that as PC2_c increases, the effect of PC1_c on OS.time becomes more positive. (not significant)
+
+This model has an adjusted R-squared of 0.06313; this means that my model explains 6.313% of the variation in OS.time
+
+The Robust SE LM returned no significant coefficients save for the intercept. This means that because Robust SEs were used, PC2_c is no longer a significant predictor of Head of Pancreas.
+
+
+
+
+# 4a. Bootstrapped SE LM
+##```{{r Bootstrapped SE LM,message=FALSE}
+set.seed(1)
+
+samp_distn<-replicate(5000, {
+boot_dat <- sample_frac(data_pca_df, replace=T) 
+
+fit <- lm(y~PC1_c*PC2_c,data = boot_dat)
+coef(fit)})
+
+samp_distn %>% t %>% as.data.frame %>% summarize_all(sd)
+
+samp_distn%>%t%>%as.data.frame%>%pivot_longer(everything())%>%group_by(name)%>% summarize(lower=quantile(value,.025), upper=quantile(value,.975))
+
+
+##```{
+
+The intercept's 95 CI does not cross 0 and is significant. All other 95 CIs include 0 and indicate that the other variables are not significant predictors. This yielded the same results as the Robust SEs LM.
+
+# 5a. Define class_diag and conf_matrix functions with optional decision threshold parameters
+##```{{r Define Classification Functions,message=FALSE}
+class_diag<-function(probs,truth,thresh= 0.5){
+  tab<-table(factor(probs>thresh,levels=c("FALSE","TRUE")),truth)
+  acc=sum(diag(tab))/sum(tab)
+  sens=tab[2,2]/colSums(tab)[2]
+  spec=tab[1,1]/colSums(tab)[1]
+  ppv=tab[2,2]/rowSums(tab)[2]
+  f1=2*(sens*ppv)/(sens+ppv)
+
+  if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE){
+    truth<-as.numeric(truth)-1}
+  
+  #CALCULATE EXACT AUC
+  ord<-order(probs, decreasing=TRUE)
+  probs <- probs[ord]; truth <- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth)) 
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+  TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+  
+  n <- length(TPR)
+  auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+
+  data.frame(acc,sens,spec,ppv,f1,auc)
+}
+# prints a confusion matrix to the screen
+conf_matrix<-function(probs,truth,thresh = 0.5){
+  table(factor(probs>thresh,levels=c("FALSE","TRUE")),truth)
+}
+
+# find optimal thresh optimizes the decision threshold to yield the maximum f1 score
+find_optimal_thresh <- function(fit,data_genes,probs,plot = FALSE){
+data_genes$probs <- probs
+# initialize f_df variable 
+f_df <- NULL
+# for i in 1000 iterations, get the f1-score for every possible cutoff between 0 and 1, incrementing 0.001 each iteration
+for (i in 1:1000){
+    f_df <- rbind(f_df,data.frame(cutoff = i/1000,f1 =class_diag(data_genes$probs,data_genes$Head_of_pancreas,i/1000)$f1))
+}
+data_genes <- data_genes %>% mutate(prediction=ifelse(probs>thresh,"1","0")) %>% mutate(y = as.factor(Head_of_pancreas))
+# get decision threshold that yielded the highest F1-score
+thresh <- (f_df %>% arrange(desc(f1)))[1,] %>% pull(cutoff)
+if (plot == TRUE){
+print(ggplot(f_df, aes(cutoff,f1)) + 
+  geom_line() + 
+  geom_vline(aes(xintercept = thresh)) + 
+  xlab("Decision Threshold") + 
+  ylab("F1-score") + 
+  theme_minimal() +
+  ggtitle("Identifying the Optimal Decision Threshold"))}
+
+
+return(thresh)}
+
+# generate density plot separated by head_of_pancreas group
+logit_density <-function(fit,Head_of_pancreas){
+# plot frequency plot of logit for both classes
+print(data.frame(predict = predict(fit,type = "link"),Head_of_pancreas = Head_of_pancreas) %>%
+        ggplot(aes(predict)) + 
+        geom_density(aes(fill = Head_of_pancreas),alpha = 0.5) + 
+        theme_minimal() + 
+        geom_vline(aes(xintercept = 0)) + 
+        xlab("logit"))}
+
+
+##```{
+
+# 5b.  Logistic Regression Predicting Head of Pancreas from Three Randomly Picked Genes
+##```{{r Logistic with 3 Genes,message=FALSE}
+set.seed(5)
+data_genes <- data %>% select(Head_of_pancreas,contains("ENSG"))
+data_genes <- data_genes %>% select(sample(2:ncol(data_genes),3),Head_of_pancreas)
+fit <- glm(Head_of_pancreas ~.,family = "binomial",data = data_genes,control = list(maxit = 75))
+
+# get class probabilities
+data_genes$probs <- predict(fit,type = "response")
+summary(fit)
+exp(coef(fit))
+
+thresh <- find_optimal_thresh(fit,data_genes, data_genes$probs,TRUE)
+
+# get relevant metrics on fit
+class_diag(data_genes$probs, data$Head_of_pancreas,thresh)
+# generate confusion matrix of fit
+conf_matrix(data_genes$probs, data$Head_of_pancreas,thresh)
+
+logit_density(fit, data_genes$Head_of_pancreas)
+
+ggplot(data_genes)+geom_roc(aes(d=as.numeric(Head_of_pancreas),m=probs), n.cuts=0) 
+##```{
+
+For this one I picked three random genes with which to work.
+
+**log(odds of class 1) = 0.07724(ENSG00000169347.15) - 0.17209(ENSG00000175535.6) + 0.10031(ENSG00000164266.9) + 0.39463**
+
+Log odds are hard to intrepret, so I exponentiate all of the coefficients. 
+
+Controlling for ENSG00000175535.6 and ENSG00000164266.9, each one unit increase in ENSG00000169347.15 increases the odds of being class 1 by a factor of 1.0803008 (not significant)
+
+Controlling for ENSG00000169347.15 and ENSG00000164266.9, each one unit increase in ENSG00000175535.6 increases the odds of being class 1 by a factor of 1.1877791 (not significant)
+
+Controlling for ENSG00000169347.15  ENSG00000175535.6, each one unit increase in ENSG00000164266.9 increases the odds of being class 1 by a factor of 0.9045531 (not significant)
+
+Immediately, it's clear that this model sacrifices specificity (0.1153846) for sensitivity (0.9923077). The model's accuracy is 0.7417582 and its precision is 0.7371429 The F1-score is surprisingly high (0.8459016), which is never bad. The AUC is a lousy 0.6445266.
+
+The ROC curve has a very low AUC (0.6445266). This means that the model cannot achieve a  high TPR without incurring a high FPR.
+
+# 6a. Predicting Head of Pancreas from All Genes
+##```{{r Logistic All Genes,message=FALSE}
+# pull out genes, head of pancreas
+data_genes <- data %>% select(contains("ENSG"),Head_of_pancreas)
+# fit logistic model to all genes; predict log odds of Head_of_pancreas; maxit = 75 prevents model from failing with large numbers of variables
+fit <- glm(Head_of_pancreas ~.,family = "binomial",data = data_genes,control = list(maxit = 75))
+# get class probabilities
+data_genes$probs <- predict(fit,type = "response")
+summary(fit)
+
+thresh <- find_optimal_thresh(fit,data_genes, data_genes$probs,TRUE)
+
+# get relevant metrics on fit
+class_diag(data_genes$probs, data$Head_of_pancreas,thresh)
+# generate confusion matrix of fit
+conf_matrix(data_genes$probs, data$Head_of_pancreas,thresh)
+
+# generate ROC curve for fit
+ggplot(data_genes)+geom_roc(aes(d=as.numeric(Head_of_pancreas),m=probs), n.cuts=0) 
+
+logit_density(fit,data_genes$Head_of_pancreas)
+##```{
+
+There are too many coefficients to count, but I'll provide a template for their interpretation: **variable** has a coefficient of **coeff**. This means that for every one-unit increase in **variable**, log odds of head of pancreas (increases/decreases) by **coeff**. (if `Pr(>|z|)` < 0.05: significant; else: not significant)
+
+The model classifies 38 of the 52 false values as false. It classifies 124 of the 130 positive values as positive.
+
+The model performs very well. It is somewhat more sensitive (0.95) than it is specific (0.73); it gets a high accuracy (0.89); it has a precision of 0.899; it has a great f1 (0.925). The AUC is a great 0.932.
+
+The optimal decision threshold for this model is at probability = 0.498; anything above is classified a Head of Pancreas sample. Anything below is non-head of pancreas.
+
+The ROC curve has a very large AUC (0.932). This means that the model can achieve a very high TPR while maintaining a relatively low FPR.
+
+# 6b. 10 fold CV with all variables
+##```{{r 10-fold CV,message=FALSE}
+
+
+
+data_genes <- data %>% select(contains("ENSG"),Head_of_pancreas)
+k=10
+temp <- data_genes[sample(nrow(data_genes)),]
+folds <- cut(seq(1:nrow(data_genes)),breaks=k, labels = F)
+diags<-NULL
+for(i in 1:k){
+train <- temp[folds!=i,] #create training set (all but fold i)
+test <- temp[folds==i,] #create test set (just fold i)
+truth <- test$Head_of_pancreas #save truth labels from fold i
+fit <- glm(Head_of_pancreas ~.,family = "binomial",data = train,control = list(maxit = 75))
+probs <- predict(fit, newdata=test, type="response")
+thresh <- find_optimal_thresh(fit, train, predict(fit, type="response"))
+diags<- rbind(diags,class_diag(probs,truth,thresh))
+}
+summarize_all(diags,mean)
+##```{
+
+The 10-fold CV has exposed the degree to which the previous model had overfitted to the dataset. Even with optimal decision cutoffs, the AUC was only 0.632. Accuracy, sensitivity, specificity, precision, and f1 are 0.7186647, 0.442619, 0.7710556, and 0.7384776, respectively.
+
+
+# 6c. LASSO
+##```{{r LASSO,message=FALSE}
+set.seed(1234)
+data_genes <- data %>% select(contains("ENSG"),Head_of_pancreas)
+y<-as.matrix(data_genes$Head_of_pancreas)
+preds<-model.matrix(Head_of_pancreas~.,data=data_genes)[,-1] %>% scale
+cv <- cv.glmnet(preds,y, family="binomial")
+{plot(cv$glmnet.fit, "lambda", label=TRUE); abline(v = log(cv$lambda.1se))}
+lasso_fit <-glmnet(preds,y,family="binomial",lambda=cv$lambda.1se)
+# probs <- predict(lasso_fit, preds, type="response")
+# class_diag(probs,data_genes$Head_of_pancreas,0.5)
+# conf_matrix(probs,data_genes$Head_of_pancreas)
+x <- coef(lasso_fit)
+rownames(x)[x[,1] > 0] 
+
+##```{
+
+LASSO selected four genes as effective predictors:"ENSG00000108849.6"  "ENSG00000175084.10" "ENSG00000188257.9" "ENSG00000172016.14". Using these variables to train a model will make it much more generalizable.
+
+
+# 6d. 10-fold CV on LASSO-honed Logistic Model
+##```{{r 10-fold CV on LASSO,message=FALSE}
+data_genes <- data %>% select(ENSG00000108849.6, ENSG00000175084.10, ENSG00000188257.9, ENSG00000172016.14,Head_of_pancreas)
+k=10
+temp <- data_genes[sample(nrow(data_genes)),]
+folds <- cut(seq(1:nrow(data_genes)),breaks=k, labels = F)
+diags<-NULL
+for(i in 1:k){
+train <- temp[folds!=i,] #create training set (all but fold i)
+test <- temp[folds==i,] #create test set (just fold i)
+truth <- test$Head_of_pancreas #save truth labels from fold i
+fit <- glm(Head_of_pancreas ~.,family = "binomial",data = train)
+probs <- predict(fit, newdata=test, type="response")
+thresh <- find_optimal_thresh(fit, train, predict(fit, type="response"))
+diags<- rbind(diags,class_diag(probs,truth, thresh))
+}
+summarize_all(diags,mean)
+##```{
+
+I suppose this is the best I can do given the tools we've learned in this course. The AUC is terrible (0.680). While sensitivity is great (0.93), specificity is non-existent (0.1). This tells me that the decision threshold chosen for my model is basically near 0, and it is classifying everything as Head of pancreas. Accuracy is bad, but not atrocious (0.69). Precision and f1 score are 0.72 and 0.81, respectively.
+
+Although this model gets lower scores than some of its predecessors, it is much more generalizable than those previous models and will thus perform better than them on new data.
+
+
+```{R, echo=F}
+## DO NOT DELETE THIS BLOCK!
+sessionInfo()
+Sys.time()
+Sys.info()
+```
+
+
+
+
+
+
+
+

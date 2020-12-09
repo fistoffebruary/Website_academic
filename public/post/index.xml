@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts | Ryan Bailey</title>
+    <link>/post/</link>
+      <atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <description>Posts</description>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator><language>en-us</language><lastBuildDate>Tue, 08 Dec 2020 00:00:00 +0000</lastBuildDate>
+    <image>
+      <url>/images/icon_hu0b7a4cb9992c9ac0e91bd28ffd38dd00_9727_512x512_fill_lanczos_center_2.png</url>
+      <title>Posts</title>
+      <link>/post/</link>
+    </image>
+    
+    <item>
+      <title>The Beauty of Reticulate</title>
+      <link>/post/reticulate/</link>
+      <pubDate>Tue, 08 Dec 2020 00:00:00 +0000</pubDate>
+      <guid>/post/reticulate/</guid>
+      <description>
+
+
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(reticulate)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;py_config()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## python:         /Users/ryanbailey/Library/r-miniconda/envs/r-reticulate/bin/python
+## libpython:      /Users/ryanbailey/Library/r-miniconda/envs/r-reticulate/lib/libpython3.6m.dylib
+## pythonhome:     /Users/ryanbailey/Library/r-miniconda/envs/r-reticulate:/Users/ryanbailey/Library/r-miniconda/envs/r-reticulate
+## version:        3.6.11 | packaged by conda-forge | (default, Aug  5 2020, 20:19:23)  [GCC Clang 10.0.1 ]
+## numpy:          /Users/ryanbailey/Library/r-miniconda/envs/r-reticulate/lib/python3.6/site-packages/numpy
+## numpy_version:  1.19.4&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;#!/usr/bin/env python
+# coding: utf-8
+
+#You may add additional imports
+import warnings
+warnings.simplefilter(&amp;quot;ignore&amp;quot;)
+import pandas as pd
+import numpy as np
+import sklearn as sk
+import matplotlib.pyplot as plt
+import time
+from sklearn.model_selection import GridSearchCV as GSCV
+from sklearn.model_selection import cross_val_score&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;
+# In[3]:
+
+
+# In[4]:
+
+
+# Read the data from csv file
+col_names = []
+for i in range(20):
+    if i == 0:
+        col_names.append(&amp;#39;quality&amp;#39;)
+    if i == 1:
+        col_names.append(&amp;#39;prescreen&amp;#39;)
+    if i &amp;gt;= 2 and i &amp;lt;= 7:
+        col_names.append(&amp;#39;ma&amp;#39; + str(i))
+    if i &amp;gt;= 8 and i &amp;lt;= 15:
+        col_names.append(&amp;#39;exudate&amp;#39; + str(i))
+    if i == 16:
+        col_names.append(&amp;#39;euDist&amp;#39;)
+    if i == 17:
+        col_names.append(&amp;#39;diameter&amp;#39;)
+    if i == 18:
+        col_names.append(&amp;#39;amfm_class&amp;#39;)
+    if i == 19:
+        col_names.append(&amp;#39;label&amp;#39;)
+
+data = pd.read_csv(&amp;quot;messidor_features.txt&amp;quot;, names = col_names)
+print(data.shape)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## (1151, 20)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;data.head(10)
+
+
+# ### 1. Data prep
+
+# Q1. Separate the feature columns from the class label column. You should end up with two separate data frames - one that contains all of the feature values and one that contains the class labels. Print the shape of the features DataFrame, the shape of the labels DataFrame, and the head of the features DataFrame.
+
+# In[5]:
+
+
+# your code goes here&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;##    quality  prescreen  ma2  ma3  ...    euDist  diameter  amfm_class  label
+## 0        1          1   22   22  ...  0.486903  0.100025           1      0
+## 1        1          1   24   24  ...  0.520908  0.144414           0      0
+## 2        1          1   62   60  ...  0.530904  0.128548           0      1
+## 3        1          1   55   53  ...  0.483284  0.114790           0      0
+## 4        1          1   44   44  ...  0.475935  0.123572           0      1
+## 5        1          1   44   43  ...  0.502831  0.126741           0      1
+## 6        1          0   29   29  ...  0.541743  0.139575           0      1
+## 7        1          1    6    6  ...  0.576318  0.071071           1      0
+## 8        1          1   22   21  ...  0.500073  0.116793           0      1
+## 9        1          1   79   75  ...  0.560959  0.109134           0      1
+## 
+## [10 rows x 20 columns]&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;datay = data[&amp;#39;label&amp;#39;]
+datax = data.drop(&amp;#39;label&amp;#39;,axis =1 )
+print(datay.shape)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## (1151,)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;print(datax.shape)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## (1151, 19)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;datax.head()
+
+
+# ### 2. Support Vector Machines (SVM) and Pipelines
+
+# Q2. For some classification algorithms, like KNN, SVMs, and Neural Nets, scaling of the data is critical for the algorithm to operate correctly. For other classification algorithms, like Naive Bayes, and Decision Trees, data scaling is not necessary (take a minute to think about why that is the case). 
+# 
+# We discussed in class how the data scaling should happen on the _training set only_, which means that it should happen _inside_ of the cross validation loop. In other words, in each fold of the cross validation, the data will be separated in to training and test sets. The scaling (calculating mean and std, for instance) should happen based on the values in the _traning set only_. Then the test set can be scaled using the values found on the training set. (Refer to the concept of [data leakage](https://machinelearningmastery.com/data-leakage-machine-learning/).)
+# 
+# In order to do this with scikit-learn, you must create what&amp;#39;s called a `Pipeline` and pass that in to the cross validation. This is a very important concept for Data Mining and Machine Learning, so let&amp;#39;s practice it here.
+# 
+# Do the following:
+# * Create a `sklearn.preprocessing.StandardScaler` object to standardize the dataset’s features (mean = 0 and variance = 1). Do not call `fit` on it yet. Just create the `StandardScaler` object.
+# * Create a sklearn.svm.SVC classifier (do not set any arguments - use the defaults). Do not call fit on it yet. Just create the SVC object.
+# * Create a `sklearn.pipeline.Pipeline` and set the `steps` to the scaler and the SVC objects that you just created. 
+# * Pass the `pipeline` in to a `cross_val_score` as the estimator, along with the features and the labels, and use a 5-fold-CV. 
+# 
+# In each fold of the cross validation, the training phase will use _only_ the training data for scaling and training the model. Then the testing phase will scale the test data into the scaled space (found on the training data) and run the test data through the trained classifier, to return an accuracy measurement for each fold. Print the average accuracy across all 5 folds. 
+
+# In[6]:
+
+
+# your code goes here&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;##    quality  prescreen  ma2  ma3  ...  exudate15    euDist  diameter  amfm_class
+## 0        1          1   22   22  ...   0.003923  0.486903  0.100025           1
+## 1        1          1   24   24  ...   0.003903  0.520908  0.144414           0
+## 2        1          1   62   60  ...   0.007744  0.530904  0.128548           0
+## 3        1          1   55   53  ...   0.001531  0.483284  0.114790           0
+## 4        1          1   44   44  ...   0.000000  0.475935  0.123572           0
+## 
+## [5 rows x 19 columns]&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;from sklearn.preprocessing import StandardScaler as SS
+from sklearn.svm import SVC
+from sklearn.pipeline import Pipeline
+SS = SS()
+clf = SVC()
+pipe = Pipeline(steps=[(&amp;#39;scaler&amp;#39;, SS), (&amp;#39;SVC&amp;#39;, clf)])
+
+nested_score = cross_val_score(pipe, datax, datay, cv=5)
+print(&amp;#39;Mean Nested Score:&amp;#39;,nested_score.mean())
+
+
+# Q3. The `svm.SVC` defaults to using an rbf (radial basis function) kernel. This kernel may or may not be the best choice for our dataset. We can use nested cross validation to find the best kernel for this dataset.
+# 
+# Set up the inner CV loop:
+# * Starter code is provided to create the &amp;quot;parameter grid&amp;quot; to search. You will need to change this code! Where I have &amp;quot;svm__kernel&amp;quot;, this indicates that I want to tune the &amp;quot;kernel&amp;quot; parameter in the &amp;quot;svm&amp;quot; part of the pipeline. When you created your pipeline above, you named the SVM part of the pipeline with a string. You should replace &amp;quot;svm&amp;quot; in the param_grid below with whatever you named your SVM part of the pipeline: **&amp;lt;replace_this&amp;gt;__kernel.** 
+# * Create a `sklearn.model_selection.GridSearchCV` that takes in the pipeline you created above (as the estimator), the parameter grid, and uses a 5-fold-CV. Call `fit` on the `GridSearchCV` to find the best kernel. 
+# * Print out the best kernel (`best_params_`) for this dataset. 
+
+# In[7]:
+
+
+# for the &amp;#39;svm&amp;#39; part of the pipeline, tune the &amp;#39;kernel&amp;#39; hyperparameter&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Mean Nested Score: 0.7011368341803125&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;param_grid = {&amp;#39;SVC__kernel&amp;#39;: [&amp;#39;linear&amp;#39;, &amp;#39;rbf&amp;#39;, &amp;#39;poly&amp;#39;, &amp;#39;sigmoid&amp;#39;]}
+grid_search = GSCV(pipe, param_grid, cv=5, scoring=&amp;#39;accuracy&amp;#39;)
+grid_search.fit(datax,datay)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## GridSearchCV(cv=5,
+##              estimator=Pipeline(steps=[(&amp;#39;scaler&amp;#39;, StandardScaler()),
+##                                        (&amp;#39;SVC&amp;#39;, SVC())]),
+##              param_grid={&amp;#39;SVC__kernel&amp;#39;: [&amp;#39;linear&amp;#39;, &amp;#39;rbf&amp;#39;, &amp;#39;poly&amp;#39;, &amp;#39;sigmoid&amp;#39;]},
+##              scoring=&amp;#39;accuracy&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;best_kernel = grid_search.best_params_.get(&amp;#39;SVC__kernel&amp;#39;)
+print(grid_search.best_params_)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## {&amp;#39;SVC__kernel&amp;#39;: &amp;#39;linear&amp;#39;}&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;print(&amp;quot;Accuracy:&amp;quot;, grid_search.best_score_)
+# your code goes here
+
+
+# Q4. Now put what you did in Q3 in to an outer CV loop to evaluate the accuracy of using that best-found kernel on unseen test data. 
+# * Pass the `GridSearchCV` in to a `cross_val_score` with 5-fold-CV. Print out the accuracy.
+# 
+# Note that the accuracy increases from Q2 because of a better choice of kernel function.
+
+# In[8]:
+
+
+# your code goes here
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Accuracy: 0.7228646715603239&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;nested_score = cross_val_score(grid_search, datax, datay, cv=5)
+print(&amp;#39;Mean Nested Score: &amp;#39;,nested_score.mean())
+
+
+# Q5. Let&amp;#39;s see if we can get the accuracy even higher by tuning additional hyperparameters. SVMs have a parameter called &amp;#39;C&amp;#39; that is the cost for a misclassification. (More info [here](https://medium.com/@pushkarmandot/what-is-the-significance-of-c-value-in-support-vector-machine-28224e852c5a)).
+# * Create a parameter grid that includes the kernel (as you have above) and the C value as well. Try values of C from 50 to 100 by increments of 10. (You can use the range function to help you with this.)
+# * Create a `GridSearchCV` with the pipeline from above, this new parameter grid, and a 5-fold-CV.
+# * Pass the `GridSearchCV` into a `cross_val_score` with a 5-fold-CV and print out the accuracy.
+# 
+# Be patient as this can take some time to run. Note that the accurcay has increased even further because the best value of C was found and used on the test data.
+# 
+# Now we&amp;#39;re actually starting to get closer to some decent accuracies on this dataset!
+
+# In[9]:
+
+
+# your code goes here&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Mean Nested Score:  0.7228646715603239&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;param_grid = {&amp;#39;SVC__kernel&amp;#39;: [&amp;#39;linear&amp;#39;, &amp;#39;rbf&amp;#39;, &amp;#39;poly&amp;#39;, &amp;#39;sigmoid&amp;#39;],&amp;#39;SVC__C&amp;#39;:list(range(50,110,10))}
+grid_search = GSCV(pipe, param_grid, cv=5, scoring=&amp;#39;accuracy&amp;#39;)
+grid_search.fit(datax,datay)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## GridSearchCV(cv=5,
+##              estimator=Pipeline(steps=[(&amp;#39;scaler&amp;#39;, StandardScaler()),
+##                                        (&amp;#39;SVC&amp;#39;, SVC())]),
+##              param_grid={&amp;#39;SVC__C&amp;#39;: [50, 60, 70, 80, 90, 100],
+##                          &amp;#39;SVC__kernel&amp;#39;: [&amp;#39;linear&amp;#39;, &amp;#39;rbf&amp;#39;, &amp;#39;poly&amp;#39;, &amp;#39;sigmoid&amp;#39;]},
+##              scoring=&amp;#39;accuracy&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;best_kernel = grid_search.best_params_.get(&amp;#39;SVC__kernel&amp;#39;)
+print(grid_search.best_params_)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## {&amp;#39;SVC__C&amp;#39;: 70, &amp;#39;SVC__kernel&amp;#39;: &amp;#39;linear&amp;#39;}&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;print(&amp;quot;Accuracy:&amp;quot;, grid_search.best_score_)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Accuracy: 0.7463052889139845&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;nested_score = cross_val_score(grid_search, datax, datay, cv=5)
+print(&amp;#39;Mean Nested Score:&amp;#39;,nested_score.mean())
+
+
+#&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Mean Nested Score: 0.7454357236965933&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
