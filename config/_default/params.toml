@@ -108,10 +108,10 @@ directions = "Go to Health Discovery Building (HDB) 6.200. My cubicle is down th
 
 # Office hours
 # A list of your office hours. To remove, set to an empty list `[]`.
-office_hours = ["No office hours as of now."]
+#office_hours = ["No office hours as of now."]
 
 # Enter an optional link for booking appointments (e.g. calendly.com).
-appointment_url = "https://calendly.com"
+# appointment_url = "https://calendly.com"
 
 # Contact links
 #   Set to `[]` to disable, or comment out unwanted lines with a hash `#`.
@@ -121,7 +121,7 @@ contact_links = [
   {icon = "video", icon_pack = "fas", name = "Add me as a contact on Zoom with either ryanbailey@utexas.edu or fistoffebruary@gmail.com", link = "#"},
   {icon = "skype", icon_pack = "fab", name = "Skype Me", link = "https://join.skype.com/invite/yAmnhjyK9fly"},
   {icon = "linkedin-in", icon_pack = "fab", name = "Visit My LinkedIn", link = "https://www.linkedin.com/in/ryan-bailey-421295146/"},
-  {icon = "stack-overflow", icon_pack = "fab", name = "Visit My stack overflow profile", link = "https://stackoverflow.com/users/11357404/ryan-bailey"}
+  {icon = "stack-overflow", icon_pack = "fab", name = "Visit My Stack Overflow profile", link = "https://stackoverflow.com/users/11357404/ryan-bailey"}
   ]
 
 ############################

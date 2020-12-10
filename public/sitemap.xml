@@ -118,6 +118,11 @@
   </url>
   
   <url>
+    <loc>/books/algorithmstoliveby/</loc>
+    <lastmod>2016-04-27T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/books/</loc>
     <lastmod>2016-04-27T00:00:00+00:00</lastmod>
   </url>
@@ -128,12 +133,22 @@
   </url>
   
   <url>
-    <loc>/tag/deep-learning/</loc>
+    <loc>/tag/computer-science/</loc>
     <lastmod>2016-04-27T00:00:00+00:00</lastmod>
   </url>
   
   <url>
     <loc>/books/gunsgermssteel/</loc>
+    <lastmod>2016-04-27T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tag/healthcare/</loc>
+    <lastmod>2016-04-27T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tag/society/</loc>
     <lastmod>2016-04-27T00:00:00+00:00</lastmod>
   </url>
   

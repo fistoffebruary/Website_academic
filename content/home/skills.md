@@ -24,19 +24,19 @@ subtitle = "What I'm good (or at least marginally ok) at."
   icon = "chart-line"
   icon_pack = "fas"
   name = "Data Visualization"
-  description = "Matplotlib, MS Excel, MS PowerPoint"
+  description = "Matplotlib and ggplot"
 
 [[feature]]
   icon = "camera-retro"
   icon_pack = "fas"
   name = "Portraiture and Landscape Photography"
-  description = ""
+  description = "I do macro photography, too"
 
 [[feature]]
-  icon = "camera-retro"
-  icon_pack = "fas"
+  icon = "dot-circle"
+  icon_pack = "far"
   name = "Bioinformatics"
-  description = "Consensus Clustering on Molecular Cancer Datsets"
+  description = "Consensus Clustering on Molecular Cancer Datasets"
 [[feature]]
   icon = "chalkboard-teacher"
   icon_pack = "fas"
@@ -47,7 +47,7 @@ subtitle = "What I'm good (or at least marginally ok) at."
   icon = "divide"
   icon_pack = "fas"
   name = "Unsupervised Learning"
-  description = "Mix of Sklearn and ConsensusClusterPlus"
+  description = "A Mix of Sklearn and ConsensusClusterPlus"
 
 [[feature]]
   icon = "dna"

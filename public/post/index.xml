@@ -20,7 +20,14 @@
       <description>
 
 
+&lt;p&gt;Python and R are integral to data science, period. There is no way around using them. Each language is great in its own right, but together, they’re unstoppable. In the below notebook, I am training a scikit-learn Support Vector Machine (SVM) classifier on &lt;a href=&#34;https://archive.ics.uci.edu/ml/datasets/Diabetic+Retinopathy+Debrecen+Data+Set&#34;&gt;Diabetic Retinopathy Debrecen Dataset&lt;/a&gt;. If you’re unfamiliar with SVMs, I highly recommend &lt;a href=&#34;https://towardsdatascience.com/support-vector-machine-introduction-to-machine-learning-algorithms-934a444fca47&#34;&gt;this article by Rohith Gandhi&lt;/a&gt; from the Towards Data Science blog on Medium. After we build the classifier, I do some hyperparameter tuning until I reach a reasonable accuracy.&lt;/p&gt;
+&lt;p&gt;All this stuff can be done in Python easily. But I want to use ggplot to visualize the dataset. Reticulate lets R and Python communicate with each others’ environment. After I finish the classifier, I reduced the dimensionality of the dataset via UMAP. At the very bottom of the notebook, I show how the SVM’s &lt;code&gt;predict&lt;/code&gt; functionality is preserved from Python to R.&lt;/p&gt;
+&lt;div id=&#34;load-in-the-reticulate-library&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Load in the Reticulate library&lt;/h2&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(reticulate)&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;check-the-python-configuration-to-make-sure-the-paths-and-versions-look-good&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Check the Python configuration to make sure the paths and versions look good&lt;/h2&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;py_config()&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## python:         /Users/ryanbailey/Library/r-miniconda/envs/r-reticulate/bin/python
 ## libpython:      /Users/ryanbailey/Library/r-miniconda/envs/r-reticulate/lib/libpython3.6m.dylib
@@ -28,6 +35,9 @@
 ## version:        3.6.11 | packaged by conda-forge | (default, Aug  5 2020, 20:19:23)  [GCC Clang 10.0.1 ]
 ## numpy:          /Users/ryanbailey/Library/r-miniconda/envs/r-reticulate/lib/python3.6/site-packages/numpy
 ## numpy_version:  1.19.4&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;importing-packages&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Importing Packages&lt;/h2&gt;
 &lt;pre class=&#34;python&#34;&gt;&lt;code&gt;#!/usr/bin/env python
 # coding: utf-8
 
@@ -41,15 +51,8 @@ import matplotlib.pyplot as plt
 import time
 from sklearn.model_selection import GridSearchCV as GSCV
 from sklearn.model_selection import cross_val_score&lt;/code&gt;&lt;/pre&gt;
-&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;
-# In[3]:
-
-
-# In[4]:
-
-
-# Read the data from csv file
-col_names = []
+&lt;p&gt;##Load in the dataset (Diabetic Retinopathy Debrecen Data Set)&lt;/p&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;col_names = []
 for i in range(20):
     if i == 0:
         col_names.append(&amp;#39;quality&amp;#39;)
@@ -71,17 +74,7 @@ for i in range(20):
 data = pd.read_csv(&amp;quot;messidor_features.txt&amp;quot;, names = col_names)
 print(data.shape)&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## (1151, 20)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;data.head(10)
-
-
-# ### 1. Data prep
-
-# Q1. Separate the feature columns from the class label column. You should end up with two separate data frames - one that contains all of the feature values and one that contains the class labels. Print the shape of the features DataFrame, the shape of the labels DataFrame, and the head of the features DataFrame.
-
-# In[5]:
-
-
-# your code goes here&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;data.head(10)&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;##    quality  prescreen  ma2  ma3  ...    euDist  diameter  amfm_class  label
 ## 0        1          1   22   22  ...  0.486903  0.100025           1      0
 ## 1        1          1   24   24  ...  0.520908  0.144414           0      0
@@ -101,29 +94,7 @@ print(datay.shape)&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## (1151,)&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;python&#34;&gt;&lt;code&gt;print(datax.shape)&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## (1151, 19)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;datax.head()
-
-
-# ### 2. Support Vector Machines (SVM) and Pipelines
-
-# Q2. For some classification algorithms, like KNN, SVMs, and Neural Nets, scaling of the data is critical for the algorithm to operate correctly. For other classification algorithms, like Naive Bayes, and Decision Trees, data scaling is not necessary (take a minute to think about why that is the case). 
-# 
-# We discussed in class how the data scaling should happen on the _training set only_, which means that it should happen _inside_ of the cross validation loop. In other words, in each fold of the cross validation, the data will be separated in to training and test sets. The scaling (calculating mean and std, for instance) should happen based on the values in the _traning set only_. Then the test set can be scaled using the values found on the training set. (Refer to the concept of [data leakage](https://machinelearningmastery.com/data-leakage-machine-learning/).)
-# 
-# In order to do this with scikit-learn, you must create what&amp;#39;s called a `Pipeline` and pass that in to the cross validation. This is a very important concept for Data Mining and Machine Learning, so let&amp;#39;s practice it here.
-# 
-# Do the following:
-# * Create a `sklearn.preprocessing.StandardScaler` object to standardize the dataset’s features (mean = 0 and variance = 1). Do not call `fit` on it yet. Just create the `StandardScaler` object.
-# * Create a sklearn.svm.SVC classifier (do not set any arguments - use the defaults). Do not call fit on it yet. Just create the SVC object.
-# * Create a `sklearn.pipeline.Pipeline` and set the `steps` to the scaler and the SVC objects that you just created. 
-# * Pass the `pipeline` in to a `cross_val_score` as the estimator, along with the features and the labels, and use a 5-fold-CV. 
-# 
-# In each fold of the cross validation, the training phase will use _only_ the training data for scaling and training the model. Then the testing phase will scale the test data into the scaled space (found on the training data) and run the test data through the trained classifier, to return an accuracy measurement for each fold. Print the average accuracy across all 5 folds. 
-
-# In[6]:
-
-
-# your code goes here&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;datax.head()&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;##    quality  prescreen  ma2  ma3  ...  exudate15    euDist  diameter  amfm_class
 ## 0        1          1   22   22  ...   0.003923  0.486903  0.100025           1
 ## 1        1          1   24   24  ...   0.003903  0.520908  0.144414           0
@@ -132,6 +103,9 @@ print(datay.shape)&lt;/code&gt;&lt;/pre&gt;
 ## 4        1          1   44   44  ...   0.000000  0.475935  0.123572           0
 ## 
 ## [5 rows x 19 columns]&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;building-a-pipeline-to-first-scale-the-data-then-to-train-the-model&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Building a pipeline to first scale the data, then to train the model&lt;/h2&gt;
 &lt;pre class=&#34;python&#34;&gt;&lt;code&gt;from sklearn.preprocessing import StandardScaler as SS
 from sklearn.svm import SVC
 from sklearn.pipeline import Pipeline
@@ -140,22 +114,13 @@ clf = SVC()
 pipe = Pipeline(steps=[(&amp;#39;scaler&amp;#39;, SS), (&amp;#39;SVC&amp;#39;, clf)])
 
 nested_score = cross_val_score(pipe, datax, datay, cv=5)
-print(&amp;#39;Mean Nested Score:&amp;#39;,nested_score.mean())
-
-
-# Q3. The `svm.SVC` defaults to using an rbf (radial basis function) kernel. This kernel may or may not be the best choice for our dataset. We can use nested cross validation to find the best kernel for this dataset.
-# 
-# Set up the inner CV loop:
-# * Starter code is provided to create the &amp;quot;parameter grid&amp;quot; to search. You will need to change this code! Where I have &amp;quot;svm__kernel&amp;quot;, this indicates that I want to tune the &amp;quot;kernel&amp;quot; parameter in the &amp;quot;svm&amp;quot; part of the pipeline. When you created your pipeline above, you named the SVM part of the pipeline with a string. You should replace &amp;quot;svm&amp;quot; in the param_grid below with whatever you named your SVM part of the pipeline: **&amp;lt;replace_this&amp;gt;__kernel.** 
-# * Create a `sklearn.model_selection.GridSearchCV` that takes in the pipeline you created above (as the estimator), the parameter grid, and uses a 5-fold-CV. Call `fit` on the `GridSearchCV` to find the best kernel. 
-# * Print out the best kernel (`best_params_`) for this dataset. 
-
-# In[7]:
-
-
-# for the &amp;#39;svm&amp;#39; part of the pipeline, tune the &amp;#39;kernel&amp;#39; hyperparameter&lt;/code&gt;&lt;/pre&gt;
+print(&amp;#39;Mean Nested Score:&amp;#39;,nested_score.mean())&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## Mean Nested Score: 0.7011368341803125&lt;/code&gt;&lt;/pre&gt;
-&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;param_grid = {&amp;#39;SVC__kernel&amp;#39;: [&amp;#39;linear&amp;#39;, &amp;#39;rbf&amp;#39;, &amp;#39;poly&amp;#39;, &amp;#39;sigmoid&amp;#39;]}
+&lt;/div&gt;
+&lt;div id=&#34;hyperparameter-tuning&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Hyperparameter Tuning&lt;/h2&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;# for the &amp;#39;svm&amp;#39; part of the pipeline, tune the &amp;#39;kernel&amp;#39; hyperparameter
+param_grid = {&amp;#39;SVC__kernel&amp;#39;: [&amp;#39;linear&amp;#39;, &amp;#39;rbf&amp;#39;, &amp;#39;poly&amp;#39;, &amp;#39;sigmoid&amp;#39;]}
 grid_search = GSCV(pipe, param_grid, cv=5, scoring=&amp;#39;accuracy&amp;#39;)
 grid_search.fit(datax,datay)&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## GridSearchCV(cv=5,
@@ -166,39 +131,17 @@ grid_search.fit(datax,datay)&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;python&#34;&gt;&lt;code&gt;best_kernel = grid_search.best_params_.get(&amp;#39;SVC__kernel&amp;#39;)
 print(grid_search.best_params_)&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## {&amp;#39;SVC__kernel&amp;#39;: &amp;#39;linear&amp;#39;}&lt;/code&gt;&lt;/pre&gt;
-&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;print(&amp;quot;Accuracy:&amp;quot;, grid_search.best_score_)
-# your code goes here
-
-
-# Q4. Now put what you did in Q3 in to an outer CV loop to evaluate the accuracy of using that best-found kernel on unseen test data. 
-# * Pass the `GridSearchCV` in to a `cross_val_score` with 5-fold-CV. Print out the accuracy.
-# 
-# Note that the accuracy increases from Q2 because of a better choice of kernel function.
-
-# In[8]:
-
-
-# your code goes here
-&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;python&#34;&gt;&lt;code&gt;print(&amp;quot;Accuracy:&amp;quot;, grid_search.best_score_)&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## Accuracy: 0.7228646715603239&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;nested-cross-validation-mean-accuracy&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Nested cross validation mean accuracy&lt;/h2&gt;
 &lt;pre class=&#34;python&#34;&gt;&lt;code&gt;nested_score = cross_val_score(grid_search, datax, datay, cv=5)
-print(&amp;#39;Mean Nested Score: &amp;#39;,nested_score.mean())
-
-
-# Q5. Let&amp;#39;s see if we can get the accuracy even higher by tuning additional hyperparameters. SVMs have a parameter called &amp;#39;C&amp;#39; that is the cost for a misclassification. (More info [here](https://medium.com/@pushkarmandot/what-is-the-significance-of-c-value-in-support-vector-machine-28224e852c5a)).
-# * Create a parameter grid that includes the kernel (as you have above) and the C value as well. Try values of C from 50 to 100 by increments of 10. (You can use the range function to help you with this.)
-# * Create a `GridSearchCV` with the pipeline from above, this new parameter grid, and a 5-fold-CV.
-# * Pass the `GridSearchCV` into a `cross_val_score` with a 5-fold-CV and print out the accuracy.
-# 
-# Be patient as this can take some time to run. Note that the accurcay has increased even further because the best value of C was found and used on the test data.
-# 
-# Now we&amp;#39;re actually starting to get closer to some decent accuracies on this dataset!
-
-# In[9]:
-
-
-# your code goes here&lt;/code&gt;&lt;/pre&gt;
+print(&amp;#39;Mean Nested Score: &amp;#39;,nested_score.mean())&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## Mean Nested Score:  0.7228646715603239&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;cross-validating-the-hyperparameter-tuned-model&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Cross Validating the Hyperparameter-tuned Model&lt;/h2&gt;
 &lt;pre class=&#34;python&#34;&gt;&lt;code&gt;param_grid = {&amp;#39;SVC__kernel&amp;#39;: [&amp;#39;linear&amp;#39;, &amp;#39;rbf&amp;#39;, &amp;#39;poly&amp;#39;, &amp;#39;sigmoid&amp;#39;],&amp;#39;SVC__C&amp;#39;:list(range(50,110,10))}
 grid_search = GSCV(pipe, param_grid, cv=5, scoring=&amp;#39;accuracy&amp;#39;)
 grid_search.fit(datax,datay)&lt;/code&gt;&lt;/pre&gt;
@@ -215,10 +158,77 @@ print(grid_search.best_params_)&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## Accuracy: 0.7463052889139845&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;python&#34;&gt;&lt;code&gt;nested_score = cross_val_score(grid_search, datax, datay, cv=5)
 print(&amp;#39;Mean Nested Score:&amp;#39;,nested_score.mean())
-
-
-#&lt;/code&gt;&lt;/pre&gt;
+&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## Mean Nested Score: 0.7454357236965933&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;loading-in-r-packages&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Loading in R packages&lt;/h2&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(umap)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: package &amp;#39;umap&amp;#39; was built under R version 3.6.2&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(readr)
+library(tidyverse)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## ── Attaching packages ──────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## ✓ ggplot2 3.3.1     ✓ dplyr   1.0.0
+## ✓ tibble  3.0.1     ✓ stringr 1.4.0
+## ✓ tidyr   1.1.0     ✓ forcats 0.5.0
+## ✓ purrr   0.3.4&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: package &amp;#39;ggplot2&amp;#39; was built under R version 3.6.2&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: package &amp;#39;tibble&amp;#39; was built under R version 3.6.2&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: package &amp;#39;tidyr&amp;#39; was built under R version 3.6.2&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: package &amp;#39;purrr&amp;#39; was built under R version 3.6.2&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: package &amp;#39;dplyr&amp;#39; was built under R version 3.6.2&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## ── Conflicts ─────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(ggplot2)
+library(ggalt)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Registered S3 methods overwritten by &amp;#39;ggalt&amp;#39;:
+##   method                  from   
+##   grid.draw.absoluteGrob  ggplot2
+##   grobHeight.absoluteGrob ggplot2
+##   grobWidth.absoluteGrob  ggplot2
+##   grobX.absoluteGrob      ggplot2
+##   grobY.absoluteGrob      ggplot2&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(ggforce)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: package &amp;#39;ggforce&amp;#39; was built under R version 3.6.2&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(concaveman)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: package &amp;#39;concaveman&amp;#39; was built under R version 3.6.2&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;collapsing-the-data-with-umap&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Collapsing the data with UMAP&lt;/h1&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;set.seed(3)
+labels &amp;lt;- py$data %&amp;gt;% pull(label)
+data &amp;lt;- py$data %&amp;gt;% select(-label)
+data_umap = umap(data)
+umap_features &amp;lt;- cbind(((data_umap$layout) %&amp;gt;% as.data.frame),labels) %&amp;gt;% 
+  mutate(label = as.factor(labels)) %&amp;gt;% 
+  select(-labels)
+umap_features %&amp;gt;% head&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;##           V1        V2 label
+## 1 -1.5948603  2.517664     0
+## 2 -1.2361083  2.352496     0
+## 3  0.8065302 -2.698501     1
+## 4 -0.1869378 -3.680573     0
+## 5 -3.2231895 -3.336815     1
+## 6 -2.6021497 -2.833544     1&lt;/code&gt;&lt;/pre&gt;
+&lt;div id=&#34;plot-the-umap-data&#34; class=&#34;section level4&#34;&gt;
+&lt;h4&gt;Plot the UMAP Data&lt;/h4&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;umap_features %&amp;gt;% 
+  ggplot(aes(x = V1, y =V2, color = as.factor(labels))) + 
+  geom_point(size = 3) + theme_minimal() + 
+  geom_mark_ellipse(expand = 0,aes(fill=as.factor(labels))) +
+  xlab(&amp;quot;UMAP Feature 1&amp;quot;) + 
+  ylab(&amp;quot;UMAP Feature 2&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/post/Reticulate/index_files/figure-html/unnamed-chunk-12-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;extracting-the-predict-method-from-the-svm&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Extracting the predict method from the SVM&lt;/h2&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;predict &amp;lt;- py$grid_search$predict
+set.seed(1)
+predict(data[sample(1:nrow(data),2),])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 0 1&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
 </description>
     </item>
     

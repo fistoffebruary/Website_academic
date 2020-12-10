@@ -5,7 +5,7 @@ headless = true  # This file represents a page section.
 active = true  # Activate this widget? true/false
 weight = 100  # Order that this section will appear.
 
-title = "Books I'm Reading"
+title = "Books I Think You Should Read"
 subtitle = ""
 
 [content]
@@ -26,12 +26,17 @@ subtitle = ""
     tag = "*"
 
   [[content.filter_button]]
-    name = "Deep Learning"
-    tag = "Deep Learning"
+    name = "Healthcare"
+    tag = "Healthcare"
 
   [[content.filter_button]]
-    name = "Other"
-    tag = "Demo"
+    name = "Computer Science"
+    tag = "Computer Science"
+    
+  [[content.filter_button]]
+    name = "Society"
+    tag = "Society"
+    
 
 [design]
   # Choose how many columns the section has. Valid values: 1 or 2.
