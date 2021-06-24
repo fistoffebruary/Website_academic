@@ -1,10 +1,13 @@
 ---
 authors:
 - admin
-bio: My interests include unsupervised learning, oncology, computer vision.
+bio: My interests include unsupervised learning, oncology, software engineering.
   matter.
 education:
   courses:
+  - course: Doctor of Medicine
+    institution: Long School of Medicine at UT Health San Antonio
+    year: 2025
   - course: BSA Biology
     institution: The University of Texas at Austin
     year: 2021
@@ -21,13 +24,12 @@ email: "ryanbailey@utexas.edu"
 interests:
 - Unsupervised Learning
 - Oncology
-- Receptor Tyrosine Kinases
 - Generative Art
-- Military Policy Regarding Nuclear Weapons
+- US Tax Policy
 organizations:
-- name: The University of Texas at Austin; College of Natural Sciences
-  url: ""
-role: Bioinformatician, Pre-Medical Student, and Photographer in Austin, Texas.
+- name: Long School of Medicine UT Health San Antonio
+  url: "https://www.uthscsa.edu/academics/medicine"
+role: Medical Student, Bioinformatician, and Photographer in San Antonio, Texas.
 social:
 - icon: envelope
   icon_pack: fas
@@ -49,4 +51,4 @@ user_groups:
 - Visitors
 ---
 
-I am a fourth-year at the University of Texas at Austin. I am a biology major and hope to go to medical school. I serve in the Kowalski Lab at UT Health Austin, where I conduct molecular subtype analyses on genetic and genomic cancer datasets. I also work in the Freshman Research Initiative stream, [Microbe Hackers](https://cns.utexas.edu/component/cobalt/item/2073-hijacking-microbial-factories-for-synthetic-biology?Itemid=1971), where I help freshmen learn the ins and outs of scientific research. I code quite a bit for fun and am really into generative art, neural networks, and software engineering. I have also started my journey as a budding social entrepreneur, thanks to the UT student organization, [Social Entrepreneurship Learning Lab](https://www.sellfellowship.org/).
+I am an MS1 at Long School of Medicine's Class of 2025.  I just graduated from the University of Texas at Austin, where I was a Biology major plus CompSci certificate seeker. During undergrad, I served in the Kowalski Lab, where I conducted molecular subtype analyses of genomic cancer datasets. I still volunteer in the Freshman Research Initiative stream, [Microbe Hackers](https://cns.utexas.edu/component/cobalt/item/2073-hijacking-microbial-factories-for-synthetic-biology?Itemid=1971), where I help first-year students learn the ins and outs of scientific research. I hope to integrate my passions for bioinformatics, computer science, and leadership with my budding medical career.
